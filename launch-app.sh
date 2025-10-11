@@ -11,7 +11,14 @@ if pgrep -f "electron.*ai-reponser" > /dev/null; then
 fi
 
 echo "Starting AI Reponder..."
-echo "Make sure you have added your API keys in Settings!"
+
+# Check environment setup
+./check-env.sh
+if [ $? -ne 0 ]; then
+    echo "❌ Environment setup incomplete. Please fix the issues above and try again."
+    exit 1
+fi
+
 echo ""
 
 # Start the app
