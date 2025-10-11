@@ -5,130 +5,260 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Reponder</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <div class="header">
             <div class="logo">
-                <span class="icon">✍️</span>
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
                 <h1>AI Reponder</h1>
             </div>
-            <div class="status-indicator">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Stopped</span>
+            <div class="header-actions">
+                <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark Mode">
+                    <svg class="theme-icon sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="theme-icon moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="settings-btn" id="settingsBtn" title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        <path d="M19.4 15A1.65 1.65 0 0 0 21 13.5A1.65 1.65 0 0 0 19.4 12A1.65 1.65 0 0 0 21 10.5A1.65 1.65 0 0 0 19.4 9A1.65 1.65 0 0 0 18 7.5A1.65 1.65 0 0 0 16.6 9A1.65 1.65 0 0 0 15 10.5A1.65 1.65 0 0 0 16.6 12A1.65 1.65 0 0 0 15 13.5A1.65 1.65 0 0 0 16.6 15A1.65 1.65 0 0 0 18 16.5A1.65 1.65 0 0 0 19.4 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Ready</span>
+                </div>
             </div>
         </div>
 
-        <!-- Main Content -->
+        <!-- Suggestion History -->
         <div class="main-content">
-            <!-- Settings Panel -->
-            <div class="panel" id="settingsPanel" style="display: none;">
-                <h2>Settings</h2>
+            <div class="history-panel">
+                <h2>Suggestion History</h2>
+                <div class="history-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="acceptedCount">0</span>
+                        <span class="stat-label">Accepted</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="rejectedCount">0</span>
+                        <span class="stat-label">Rejected</span>
+                    </div>
+                </div>
                 
-                <div class="setting-group">
-                    <label for="aiProvider">AI Provider:</label>
-                    <select id="aiProvider">
-                        <option value="gemini">Google Gemini</option>
-                        <option value="perplexity">Perplexity AI</option>
-                    </select>
+                <div class="history-list" id="historyList">
+                    <div class="no-history">
+                        <p>No suggestions yet. Use <strong>Cmd+Shift+T</strong> to get started!</p>
+                    </div>
                 </div>
-
-                <div class="setting-group">
-                    <label for="geminiKey">Gemini API Key:</label>
-                    <input type="password" id="geminiKey" placeholder="Enter your Gemini API key">
-                    <button id="saveGeminiKey">Save</button>
-                </div>
-
-                <div class="setting-group">
-                    <label for="perplexityKey">Perplexity API Key:</label>
-                    <input type="password" id="perplexityKey" placeholder="Enter your Perplexity API key">
-                    <button id="savePerplexityKey">Save</button>
-                </div>
-
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="autoReplace"> Auto-replace text
-                    </label>
-                </div>
-
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="showSuggestions" checked> Show suggestions
-                    </label>
-                </div>
-
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="grammarCheck" checked> Grammar check
-                    </label>
-                </div>
-
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="toneAdjustment" checked> Tone adjustment
-                    </label>
-                </div>
-
-                <button id="saveSettings" class="primary-button">Save Settings</button>
             </div>
+        </div>
 
-            <!-- Suggestions Panel -->
-            <div class="panel" id="suggestionsPanel">
-                <h2>Writing Suggestions</h2>
-                
-                <div class="original-text">
-                    <h3>Original Text:</h3>
-                    <div class="text-display" id="originalTextDisplay">No text detected yet...</div>
+        <!-- Configuration Panel -->
+        <div class="config-panel" id="configPanel" style="display: none;">
+            <div class="config-header">
+                <div class="config-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        <path d="M19.4 15A1.65 1.65 0 0 0 21 13.5A1.65 1.65 0 0 0 19.4 12A1.65 1.65 0 0 0 21 10.5A1.65 1.65 0 0 0 19.4 9A1.65 1.65 0 0 0 18 7.5A1.65 1.65 0 0 0 16.6 9A1.65 1.65 0 0 0 15 10.5A1.65 1.65 0 0 0 16.6 12A1.65 1.65 0 0 0 15 13.5A1.65 1.65 0 0 0 16.6 15A1.65 1.65 0 0 0 18 16.5A1.65 1.65 0 0 0 19.4 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h3>Preferences</h3>
                 </div>
-
-                <div class="suggestions-container">
-                    <!-- Grammar Issues -->
-                    <div class="suggestion-section" id="grammarSection" style="display: none;">
-                        <h3>Grammar Issues</h3>
-                        <div class="suggestions-list" id="grammarSuggestions"></div>
+                <button class="close-config-btn" id="closeConfigBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="config-content">
+                <div class="config-section">
+                    <div class="section-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2"/>
+                            <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <h4>Keyboard Shortcuts</h4>
                     </div>
-
-                    <!-- Improvements -->
-                    <div class="suggestion-section" id="improvementsSection" style="display: none;">
-                        <h3>Improvements</h3>
-                        <div class="suggestions-list" id="improvementsSuggestions"></div>
-                    </div>
-
-                    <!-- Tone Suggestions -->
-                    <div class="suggestion-section" id="toneSection" style="display: none;">
-                        <h3>Tone Suggestions</h3>
-                        <div class="suggestions-list" id="toneSuggestions"></div>
-                    </div>
-
-                    <!-- Overall Suggestion -->
-                    <div class="suggestion-section" id="overallSection" style="display: none;">
-                        <h3>Overall Suggestion</h3>
-                        <div class="overall-suggestion">
-                            <div class="text-display" id="overallSuggestionText"></div>
-                            <button id="applyOverallSuggestion" class="primary-button">Apply This Suggestion</button>
+                    <div class="shortcut-config">
+                        <div class="shortcut-item">
+                            <div class="shortcut-info">
+                                <label>Auto-copy and analyze</label>
+                                <span class="shortcut-description">Automatically select all text and analyze it</span>
+                            </div>
+                            <div class="shortcut-controls">
+                                <input type="text" id="autoCopyShortcut" value="Cmd+Shift+T" readonly>
+                                <button class="change-shortcut-btn" data-action="autoCopy">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M15.5 5.5L8.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="shortcut-info">
+                                <label>Alternative auto-copy</label>
+                                <span class="shortcut-description">Alternative shortcut for auto-copy</span>
+                            </div>
+                            <div class="shortcut-controls">
+                                <input type="text" id="altAutoCopyShortcut" value="Cmd+Shift+Space" readonly>
+                                <button class="change-shortcut-btn" data-action="altAutoCopy">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M15.5 5.5L8.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Change
+                                </button>
+                            </div>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="shortcut-info">
+                                <label>Analyze clipboard</label>
+                                <span class="shortcut-description">Analyze current clipboard content</span>
+                            </div>
+                            <div class="shortcut-controls">
+                                <input type="text" id="analyzeClipboardShortcut" value="Cmd+Shift+C" readonly>
+                                <button class="change-shortcut-btn" data-action="analyzeClipboard">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M15.5 5.5L8.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Change
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="no-suggestions" id="noSuggestions">
-                    <p>Start typing in any application to see AI-powered writing suggestions!</p>
-                    <p class="hint">Make sure monitoring is enabled and you have configured an AI provider.</p>
+                
+                <div class="config-section">
+                    <div class="section-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h4>AI Prompts</h4>
+                    </div>
+                    <div class="prompts-config">
+                        <div class="prompt-selector">
+                            <label for="activePrompt">Active Prompt Template:</label>
+                            <select id="activePrompt" class="prompt-select">
+                                <option value="professional">Professional</option>
+                                <option value="casual">Casual</option>
+                                <option value="creative">Creative</option>
+                                <option value="technical">Technical</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        
+                        <div class="prompt-templates">
+                            <div class="prompt-template" data-template="professional">
+                                <label>Professional</label>
+                                <textarea class="prompt-textarea" placeholder="Enter professional prompt template...">Rewrite the message professionally, slick and without any ambiguity, keep it crisp and clean. Focus on clarity, conciseness, and professional tone while maintaining the original meaning.</textarea>
+                            </div>
+                            
+                            <div class="prompt-template" data-template="casual">
+                                <label>Casual</label>
+                                <textarea class="prompt-textarea" placeholder="Enter casual prompt template...">Rewrite this message in a more casual, friendly tone while keeping it clear and engaging. Make it sound natural and conversational.</textarea>
+                            </div>
+                            
+                            <div class="prompt-template" data-template="creative">
+                                <label>Creative</label>
+                                <textarea class="prompt-textarea" placeholder="Enter creative prompt template...">Rewrite this message with more creative and engaging language. Add personality and flair while maintaining clarity and impact.</textarea>
+                            </div>
+                            
+                            <div class="prompt-template" data-template="technical">
+                                <label>Technical</label>
+                                <textarea class="prompt-textarea" placeholder="Enter technical prompt template...">Rewrite this message with precise, technical language. Use industry terminology and maintain accuracy while improving clarity and structure.</textarea>
+                            </div>
+                            
+                            <div class="prompt-template" data-template="custom">
+                                <label>Custom</label>
+                                <textarea class="prompt-textarea" placeholder="Enter your custom prompt template...">Rewrite the message according to your specific requirements...</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="prompt-actions">
+                            <button class="save-prompts-btn" id="savePromptsBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3H16L21 8V19A2 2 0 0 1 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <polyline points="17,21 17,13 7,13 7,21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <polyline points="7,3 7,8 15,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Save Prompts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="section-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <h4>Appearance</h4>
+                    </div>
+                    <div class="appearance-config">
+                        <div class="theme-option">
+                            <div class="theme-info">
+                                <label>Dark Mode</label>
+                                <span class="theme-description">Switch between light and dark themes</span>
+                            </div>
+                            <div class="theme-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="darkModeToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            <button id="toggleMonitoring" class="primary-button">Start Monitoring</button>
-            <button id="showSettingsBtn" class="secondary-button">Settings</button>
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>Keyboard Shortcuts:</h3>
+            <div class="shortcut-list">
+                <div class="shortcut-item">
+                    <kbd id="displayAutoCopyShortcut">Cmd+Shift+T</kbd>
+                    <span>Auto-copy and analyze text</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd id="displayAltAutoCopyShortcut">Cmd+Shift+Space</kbd>
+                    <span>Alternative auto-copy</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd id="displayAnalyzeClipboardShortcut">Cmd+Shift+C</kbd>
+                    <span>Analyze clipboard</span>
+                </div>
+            </div>
         </div>
     </div>
-
     <script src="renderer.js"></script>
 </body>
 </html>
-
-
-
-

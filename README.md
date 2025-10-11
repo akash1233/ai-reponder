@@ -1,172 +1,211 @@
 # AI Reponder
 
-A powerful AI-powered writing assistant that monitors text across desktop applications and provides real-time grammar and writing suggestions. Works seamlessly with Slack, Gmail, and any other desktop application.
+AI-powered writing assistant that monitors text across desktop applications and provides real-time grammar and writing suggestions using Perplexity AI.
 
-## ✨ Features
+## Features
 
-- **Real-time Text Monitoring** - Detects text as you type or copy across any desktop application
-- **AI-Powered Suggestions** - Uses Perplexity AI for intelligent grammar and writing improvements
-- **Individual Fix Buttons** - Apply specific grammar fixes or improvements with one click
-- **Visual Instructions** - Clear step-by-step guidance for text replacement
-- **Cross-Platform** - Built with Electron for macOS, Windows, and Linux
-- **Desktop Integration** - Works with any application, not just web browsers
-- **Intuitive UI** - Clean, modern interface with loading states and notifications
+- **Real-time Text Monitoring**: Monitors text input across desktop and web applications
+- **AI-Powered Suggestions**: Uses Perplexity AI for intelligent text analysis and rewriting
+- **Multiple Writing Styles**: Professional, casual, creative, technical, and custom prompts
+- **Global Keyboard Shortcuts**: Quick access with customizable shortcuts
+- **Floating Overlay**: Non-intrusive suggestion display
+- **Suggestion History**: Track accepted and rejected suggestions
+- **Dark Mode**: Modern UI with dark/light theme support
+- **Cross-Platform**: Works on macOS, Windows, and Linux
 
-## 🚀 Quick Start
+## Installation
 
-### Prerequisites
-
-- Node.js 16+ 
-- npm or yarn
-- Perplexity AI API key (hardcoded for easy setup)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/akash1233/ai-reponder.git
-   cd ai-reponder
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   # Copy the example file
-   cp .env.example .env
-   
-   # Edit .env and add your Perplexity API key
-   # Get your key from: https://www.perplexity.ai/settings/api
-   ```
-
-4. **Start the application**
-   ```bash
-   npm start
-   ```
-
-5. **Create desktop shortcut** (macOS)
-   ```bash
-   ./create-desktop-icon.sh
-   ```
-
-## 📖 How to Use
-
-1. **Start the app** - Launch AI Reponder from the desktop shortcut or terminal
-2. **Type or copy text** - In any application (Slack, Gmail, etc.)
-3. **Get suggestions** - AI Reponder will automatically detect and analyze your text
-4. **Apply improvements** - Click individual fix buttons or apply the complete rewrite
-5. **Paste improvements** - Use Cmd+V to paste the improved text back
-
-## 🎯 Supported Applications
-
-- **Slack** (Desktop & Web)
-- **Gmail** (Desktop & Web)
-- **Microsoft Word**
-- **Google Docs**
-- **Notion**
-- **Any text editor or application**
-
-## 🔧 Configuration
-
-The app requires a Perplexity AI API key to function. Follow the setup instructions below.
-
-### Advanced Configuration
-
-You can modify the AI provider in `src/services/AIService.js`:
-
-```javascript
-// Environment variable configuration
-this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || null;
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd ai-reponser
 ```
 
-### **Environment Setup**
-
-Create a `.env` file in the project root:
-
+2. Install dependencies:
 ```bash
-# .env
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env and add your Perplexity API key
+```
+
+4. Run the application:
+```bash
+npm start
+```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
 PERPLEXITY_API_KEY=your_perplexity_api_key_here
 ```
 
-## 🏗️ Architecture
+### Keyboard Shortcuts
 
+Default shortcuts:
+- `Cmd+Shift+T` (macOS) / `Ctrl+Shift+T` (Windows/Linux): Auto-copy and analyze text
+- `Cmd+Shift+Space` (macOS) / `Ctrl+Shift+Space` (Windows/Linux): Alternative auto-copy
+- `Cmd+Shift+C` (macOS) / `Ctrl+Shift+C` (Windows/Linux): Analyze clipboard content
+
+Shortcuts can be customized through the settings panel.
+
+### Writing Styles
+
+The app supports multiple writing styles:
+
+- **Professional**: Clean, crisp, and unambiguous writing
+- **Casual**: Friendly and conversational tone
+- **Creative**: Engaging language with personality
+- **Technical**: Precise, industry-specific terminology
+- **Custom**: User-defined prompts
+
+## Usage
+
+1. **Start the app**: Launch AI Reponder from the Applications folder or run `npm start`
+2. **Select text**: In any application, select the text you want to improve
+3. **Trigger analysis**: Press `Cmd+Shift+T` to auto-copy and analyze, or `Cmd+Shift+C` to analyze clipboard
+4. **Review suggestions**: The floating overlay will show AI-powered suggestions
+5. **Accept or reject**: Click "Copy" to accept a suggestion or "Ignore" to reject it
+6. **Paste improved text**: Use `Cmd+V` to paste the improved text
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests for CI
+npm run test:ci
 ```
-ai-reponder/
-├── src/
-│   ├── main.js              # Electron main process
-│   ├── renderer/
-│   │   ├── index.html       # Main UI
-│   │   ├── renderer.js      # Frontend logic
-│   │   └── styles.css       # Styling
-│   └── services/
-│       ├── AIService.js     # AI integration (Perplexity)
-│       ├── TextMonitor.js   # Text detection & replacement
-│       └── SlackIntegration.js # Slack-specific features
-├── create-desktop-icon.sh   # Desktop shortcut creator
-├── launch-app.sh           # App launcher
-└── package.json
+
+### Test Structure
+
+The test suite includes:
+
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: End-to-end workflow testing
+- **Mock Tests**: External dependency simulation
+
+Test files are located in the `tests/` directory:
+
+- `main.test.js` - Main Electron process tests
+- `ai-service.test.js` - AI service and API integration tests
+- `text-monitor.test.js` - Text monitoring and clipboard tests
+- `suggestion-overlay.test.js` - Overlay window management tests
+- `renderer.test.js` - UI and renderer process tests
+- `integration.test.js` - End-to-end workflow tests
+
+### Building
+
+```bash
+# Build for current platform
+npm run build
+
+# Build for specific platform
+npm run build -- --mac
+npm run build -- --win
+npm run build -- --linux
 ```
 
-## 🛠️ Development
+## Architecture
 
-### Running in Development Mode
+### Main Components
 
+1. **Main Process** (`src/main.js`): Electron main process handling app lifecycle, IPC, and global shortcuts
+2. **AIService** (`src/services/AIService.js`): Perplexity AI integration and suggestion processing
+3. **TextMonitor** (`src/services/TextMonitor.js`): Clipboard monitoring and text detection
+4. **SuggestionOverlay** (`src/services/SuggestionOverlay.js`): Floating overlay window management
+5. **Renderer** (`src/renderer/`): UI components and user interactions
+
+### Data Flow
+
+1. User presses global shortcut
+2. TextMonitor captures text from clipboard
+3. AIService processes text with Perplexity AI
+4. SuggestionOverlay displays suggestions
+5. User accepts/rejects suggestions
+6. Improved text is copied to clipboard
+
+## API Integration
+
+### Perplexity AI
+
+The app uses Perplexity AI's `sonar-pro` model for text analysis:
+
+- **Endpoint**: `https://api.perplexity.ai/chat/completions`
+- **Model**: `sonar-pro`
+- **Max Tokens**: 300
+- **Temperature**: 0.2
+
+### Request Format
+
+```json
+{
+  "model": "sonar-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Rewrite the message professionally..."
+    }
+  ],
+  "max_tokens": 300,
+  "temperature": 0.2
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **App not responding to shortcuts**: Check system permissions for accessibility
+2. **Suggestions not appearing**: Verify Perplexity API key is set correctly
+3. **Overlay not showing**: Check if overlay window is being blocked by other applications
+
+### Debug Mode
+
+Run with debug logging:
 ```bash
 npm run dev
 ```
 
-### Building for Production
+Check console output for detailed logs.
 
-```bash
-npm run build
-```
-
-## 📱 Screenshots
-
-![AI Reponder Interface](screenshots/main-interface.png)
-*Clean, intuitive interface with real-time suggestions*
-
-![Text Replacement](screenshots/text-replacement.png)
-*Visual instructions for easy text replacement*
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Changelog
 
-- [Perplexity AI](https://www.perplexity.ai/) for providing the AI capabilities
-- [Electron](https://www.electronjs.org/) for the cross-platform desktop framework
-- [Axios](https://axios-http.com/) for HTTP requests
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/akash1233/ai-reponder/issues) page
-2. Create a new issue with detailed information
-3. Include your operating system and error messages
-
-## 🔮 Roadmap
-
-- [ ] Multiple AI provider support (OpenAI, Claude)
-- [ ] Custom writing styles and tones
-- [ ] Export functionality for suggestions
-- [ ] Settings persistence
-- [ ] Auto-updater
-- [ ] Plugin system for custom integrations
-
----
-
-**Made with ❤️ for better writing everywhere**
+### v1.0.0
+- Initial release
+- Perplexity AI integration
+- Global keyboard shortcuts
+- Floating suggestion overlay
+- Multiple writing styles
+- Dark mode support
+- Suggestion history
+- Cross-platform support

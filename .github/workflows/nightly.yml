@@ -1,0 +1,56 @@
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Run at 2 AM UTC daily
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  nightly-tests:
+    name: Nightly Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run full test suite
+      run: npm run test:ci
+      env:
+        PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY || 'test-key' }}
+        
+    - name: Run performance tests
+      run: |
+        echo "Running performance tests..."
+        npm run test:performance || echo "Performance tests not implemented yet"
+      continue-on-error: true
+      
+    - name: Check for dependency updates
+      run: |
+        echo "Checking for outdated dependencies..."
+        npm outdated || echo "Some dependencies are outdated"
+      continue-on-error: true
+      
+    - name: Generate test report
+      run: |
+        echo "Generating test report..."
+        npm run test:coverage
+        echo "Test report generated in coverage/ directory"
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: nightly-test-results
+        path: |
+          coverage/
+          test-results/
+        retention-days: 30
