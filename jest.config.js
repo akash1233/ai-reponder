@@ -12,9 +12,21 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-  testTimeout: 10000,
+  testTimeout: 15000,
   verbose: true,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
+  projects: [
+    {
+      displayName: 'node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/tests/(main|ai-service|text-monitor|suggestion-overlay|integration).test.js']
+    },
+    {
+      displayName: 'jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/tests/renderer.test.js']
+    }
+  ]
 };

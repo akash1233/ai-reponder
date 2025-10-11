@@ -2,13 +2,13 @@
 
 # Create a desktop shortcut for AI Reponder
 APP_NAME="AI Reponder"
-SCRIPT_PATH="/Users/ds/ai-reponser/start-app.sh"
+SCRIPT_PATH="/Users/ds/ai-reponder/start-app.sh"
 DESKTOP_PATH="$HOME/Desktop/AI Reponder.command"
 
 # Create the startup script
 cat > "$SCRIPT_PATH" << 'EOF'
 #!/bin/bash
-cd /Users/ds/ai-reponser
+cd /Users/ds/ai-reponder
 echo "Starting AI Reponder..."
 echo "Make sure you have added your API keys in Settings!"
 npm start
@@ -20,7 +20,7 @@ chmod +x "$SCRIPT_PATH"
 # Create the desktop shortcut
 cat > "$DESKTOP_PATH" << EOF
 #!/bin/bash
-/Users/ds/ai-reponser/launch-app.sh
+/Users/ds/ai-reponder/launch-app.sh
 EOF
 
 # Make the desktop shortcut executable

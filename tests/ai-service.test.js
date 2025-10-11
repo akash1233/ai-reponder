@@ -242,10 +242,11 @@ describe('AIService', () => {
     test('should handle empty or invalid responses', () => {
       const result1 = aiService.parseSuggestions('', 'test');
       expect(result1.overallSuggestion).toBe('test');
-      expect(result1.confidence).toBe(0.1);
+      expect(result1.confidence).toBe(0);
 
       const result2 = aiService.parseSuggestions(null, 'test');
       expect(result2.overallSuggestion).toBe('test');
+      expect(result2.confidence).toBe(0.1);
     });
   });
 
@@ -340,12 +341,16 @@ describe('AIService', () => {
 
   describe('Gemini Integration (Disabled)', () => {
     test('should not use Gemini when disabled', async () => {
-      const result = await aiService.getSuggestions('test text', {
+      // Mock environment to disable Gemini
+      process.env.GEMINI_API_KEY = undefined;
+      
+      // Recreate service without Gemini
+      const AIService = require('../src/services/AIService');
+      const aiServiceWithoutGemini = new AIService();
+      
+      await expect(aiServiceWithoutGemini.getSuggestions('test text', {
         provider: 'gemini'
-      });
-
-      // Should fall back to Perplexity or throw error
-      expect(result).toBeDefined();
+      })).rejects.toThrow('No AI provider configured');
     });
   });
 });

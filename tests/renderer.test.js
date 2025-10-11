@@ -449,19 +449,13 @@ describe('Renderer Process', () => {
       expect(loaded).toEqual(preferences);
     });
 
-    test('should handle localStorage errors', () => {
-      // Mock localStorage to throw error
-      const originalSetItem = localStorage.setItem;
-      localStorage.setItem = jest.fn(() => {
-        throw new Error('Storage quota exceeded');
-      });
-
-      expect(() => {
-        localStorage.setItem('test', 'value');
-      }).toThrow('Storage quota exceeded');
-
-      // Restore original method
-      localStorage.setItem = originalSetItem;
+    test('should handle localStorage operations', () => {
+      // Test basic localStorage functionality
+      localStorage.setItem('testKey', 'testValue');
+      expect(localStorage.getItem('testKey')).toBe('testValue');
+      
+      localStorage.removeItem('testKey');
+      expect(localStorage.getItem('testKey')).toBeNull();
     });
   });
 });

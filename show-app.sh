@@ -3,7 +3,7 @@
 echo "Looking for AI Reponder..."
 
 # Check if the app is running
-if pgrep -f "electron.*ai-reponser" > /dev/null; then
+if pgrep -f "electron.*ai-reponder" > /dev/null; then
     echo "✅ AI Reponder is running!"
     echo ""
     echo "The app window might be hidden. Try these steps:"
@@ -25,7 +25,7 @@ if pgrep -f "electron.*ai-reponser" > /dev/null; then
 else
     echo "❌ AI Reponder is not running."
     echo "Starting the app now..."
-    cd /Users/ds/ai-reponser
+    cd /Users/ds/ai-reponder
     npm start &
     echo "App started! Look for the window."
 fi
