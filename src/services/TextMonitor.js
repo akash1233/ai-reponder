@@ -1,4 +1,5 @@
 const { clipboard } = require('electron');
+const robot = require('robotjs');
 // const activeWin = require('active-win'); // Disabled to avoid permission issues
 
 class TextMonitor {
@@ -11,31 +12,54 @@ class TextMonitor {
     this.keyBuffer = [];
     this.maxBufferSize = 1000;
     this.callback = null;
+    this.keyboardInterval = null;
+    this.clipboardInterval = null;
+    this.isTyping = false;
+    this.typingTimeout = null;
+    this.lastProcessedText = '';
+    this.textHistory = [];
+    this.maxHistorySize = 10;
   }
 
   async start(callback) {
     this.callback = callback;
     this.isMonitoring = true;
     
-    // Monitor clipboard changes
+    // Start multiple monitoring methods for better reliability
+    this.startKeyboardMonitoring();
     this.startClipboardMonitoring();
-    
-    // Monitor active window changes
     this.startWindowMonitoring();
     
-    console.log('Text monitoring started');
+    console.log('Enhanced text monitoring started with multiple capture methods');
   }
 
   async stop() {
     this.isMonitoring = false;
+    
+    // Clear all intervals
     if (this.windowInterval) {
       clearInterval(this.windowInterval);
+      this.windowInterval = null;
     }
-    console.log('Text monitoring stopped');
+    if (this.keyboardInterval) {
+      clearInterval(this.keyboardInterval);
+      this.keyboardInterval = null;
+    }
+    if (this.clipboardInterval) {
+      clearInterval(this.clipboardInterval);
+      this.clipboardInterval = null;
+    }
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+      this.typingTimeout = null;
+    }
+    
+    console.log('Enhanced text monitoring stopped');
   }
 
   startClipboardMonitoring() {
-    const checkClipboard = async () => {
+    // More efficient clipboard monitoring with better timing
+    this.clipboardInterval = setInterval(() => {
       if (!this.isMonitoring) return;
 
       try {
@@ -50,13 +74,9 @@ class TextMonitor {
           }
         }
       } catch (error) {
-        console.error('Clipboard monitoring error:', error);
+        // Silently handle clipboard errors to avoid spam
       }
-
-      setTimeout(checkClipboard, 100); // Check every 100ms
-    };
-
-    checkClipboard();
+    }, 200); // Check every 200ms for better performance
   }
 
   startWindowMonitoring() {
@@ -109,12 +129,42 @@ class TextMonitor {
 
 
   isTypedText(text) {
-    // Simple heuristic to determine if text was typed vs copied
-    // Look for patterns that suggest typing vs copying
-    return text.length > 10 && 
-           text.length < 500 && 
-           !text.includes('\n') && 
-           text.trim().length > 0;
+    if (!text || text.trim().length === 0) return false;
+    
+    // More sophisticated heuristics to determine if text was typed vs copied
+    const cleanText = text.trim();
+    
+    // Length checks - typed text is usually shorter
+    if (cleanText.length < 5 || cleanText.length > 1000) return false;
+    
+    // Check for common copy patterns
+    if (cleanText.includes('\n') && cleanText.split('\n').length > 3) return false; // Multi-line content
+    if (cleanText.includes('\t')) return false; // Tab characters suggest formatted content
+    if (cleanText.match(/^[A-Z\s]+$/)) return false; // All caps might be headers
+    if (cleanText.match(/^\d+$/)) return false; // Just numbers
+    if (cleanText.match(/^[^\w\s]+$/)) return false; // Just symbols
+    
+    // Check for typing patterns
+    const hasTypingPatterns = 
+      cleanText.includes(' ') || // Has spaces (typical for sentences)
+      cleanText.match(/[a-z]/) || // Has lowercase letters
+      cleanText.match(/[.!?]/) || // Has sentence endings
+      cleanText.match(/\b(?:the|and|or|but|in|on|at|to|for|of|with|by)\b/i); // Common words
+    
+    // Check if it's not in our recent history (avoid reprocessing)
+    const isRecent = this.textHistory.some(history => 
+      history.toLowerCase() === cleanText.toLowerCase()
+    );
+    
+    if (isRecent) return false;
+    
+    // Add to history
+    this.textHistory.push(cleanText);
+    if (this.textHistory.length > this.maxHistorySize) {
+      this.textHistory.shift();
+    }
+    
+    return hasTypingPatterns;
   }
 
   processText(text) {
@@ -126,11 +176,90 @@ class TextMonitor {
     // Avoid processing the same text multiple times
     if (cleanText === this.currentText) return;
     
+    // Set typing state
+    this.isTyping = true;
     this.currentText = cleanText;
+    
+    // Clear any existing timeout
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+    }
+    
+    // Set a timeout to detect when typing stops
+    this.typingTimeout = setTimeout(() => {
+      this.isTyping = false;
+    }, 1000); // Consider typing stopped after 1 second of inactivity
     
     // Call the callback with the detected text
     if (this.callback) {
       this.callback(cleanText);
+    }
+  }
+
+  startKeyboardMonitoring() {
+    // Monitor keyboard input more frequently for smoother capture
+    this.keyboardInterval = setInterval(() => {
+      if (!this.isMonitoring) return;
+      
+      try {
+        // Check for clipboard changes (indicates text selection/copy)
+        const currentClipboard = clipboard.readText();
+        if (currentClipboard && currentClipboard !== this.lastClipboard) {
+          this.lastClipboard = currentClipboard;
+          
+          // Process if it looks like typed text
+          if (this.isTypedText(currentClipboard)) {
+            this.processText(currentClipboard);
+          }
+        }
+        
+        // Check for text changes in active window
+        this.checkForActiveText();
+        
+      } catch (error) {
+        // Silently handle errors to avoid spam
+      }
+    }, 50); // Check every 50ms for smoother capture
+  }
+
+  checkForActiveText() {
+    try {
+      // Use robotjs to get current screen content and detect text changes
+      // This is a more direct approach than clipboard monitoring
+      const currentTime = Date.now();
+      
+      // Only check if enough time has passed since last check
+      if (currentTime - this.lastKeyTime < 100) return;
+      
+      this.lastKeyTime = currentTime;
+      
+      // Simulate a copy operation to get current selection
+      // This is more reliable than clipboard monitoring alone
+      const previousClipboard = clipboard.readText();
+      
+      // Simulate Cmd+C to capture current selection
+      robot.keyTap('c', 'command');
+      
+      // Small delay to ensure copy operation completes
+      setTimeout(() => {
+        try {
+          const newClipboard = clipboard.readText();
+          
+          // If clipboard changed and looks like typed text
+          if (newClipboard && newClipboard !== previousClipboard && 
+              newClipboard !== this.lastProcessedText && 
+              this.isTypedText(newClipboard)) {
+            
+            this.lastProcessedText = newClipboard;
+            this.processText(newClipboard);
+          }
+        } catch (error) {
+          // Silently handle errors
+        }
+      }, 10);
+      
+    } catch (error) {
+      // Silently handle errors to avoid spam
     }
   }
 

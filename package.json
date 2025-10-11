@@ -29,7 +29,8 @@
     "dotenv": "^17.2.3",
     "electron-clipboard-ex": "^1.0.0",
     "electron-store": "^8.1.0",
-    "openai": "^4.20.0"
+    "openai": "^4.20.0",
+    "robotjs": "^0.6.0"
   },
   "build": {
     "appId": "com.aiwritingassistant.app",
