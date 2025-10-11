@@ -1,571 +1,406 @@
 const { ipcRenderer } = require('electron');
 
-class UIManager {
-    constructor() {
-        this.currentSuggestions = null;
-        this.isMonitoring = false;
-        this.settings = {};
-        
-        this.initializeElements();
-        this.setupEventListeners();
-        this.loadSettings();
-        this.updateMonitoringStatus();
-    }
+// History tracking
+let suggestionHistory = [];
+let acceptedCount = 0;
+let rejectedCount = 0;
 
-    initializeElements() {
-        // Status elements
-        this.statusDot = document.getElementById('statusDot');
-        this.statusText = document.getElementById('statusText');
-        
-        // Panels
-        this.settingsPanel = document.getElementById('settingsPanel');
-        this.suggestionsPanel = document.getElementById('suggestionsPanel');
-        
-        // Settings elements
-        this.aiProvider = document.getElementById('aiProvider');
-        this.geminiKey = document.getElementById('geminiKey');
-        this.perplexityKey = document.getElementById('perplexityKey');
-        this.autoReplace = document.getElementById('autoReplace');
-        this.showSuggestions = document.getElementById('showSuggestions');
-        this.grammarCheck = document.getElementById('grammarCheck');
-        this.toneAdjustment = document.getElementById('toneAdjustment');
-        
-        // Suggestion elements
-        this.originalTextDisplay = document.getElementById('originalTextDisplay');
-        this.grammarSection = document.getElementById('grammarSection');
-        this.grammarSuggestions = document.getElementById('grammarSuggestions');
-        this.improvementsSection = document.getElementById('improvementsSection');
-        this.improvementsSuggestions = document.getElementById('improvementsSuggestions');
-        this.toneSection = document.getElementById('toneSection');
-        this.toneSuggestions = document.getElementById('toneSuggestions');
-        this.overallSection = document.getElementById('overallSection');
-        this.overallSuggestionText = document.getElementById('overallSuggestionText');
-        this.noSuggestions = document.getElementById('noSuggestions');
-        
-        // Buttons
-        this.toggleMonitoringBtn = document.getElementById('toggleMonitoring');
-        this.showSettingsBtn = document.getElementById('showSettingsBtn');
-        this.saveSettingsBtn = document.getElementById('saveSettings');
-        this.saveGeminiKeyBtn = document.getElementById('saveGeminiKey');
-        this.savePerplexityKeyBtn = document.getElementById('savePerplexityKey');
-        this.applyOverallSuggestionBtn = document.getElementById('applyOverallSuggestion');
-    }
+// DOM elements
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const acceptedCountEl = document.getElementById('acceptedCount');
+const rejectedCountEl = document.getElementById('rejectedCount');
+const historyList = document.getElementById('historyList');
+const settingsBtn = document.getElementById('settingsBtn');
+const configPanel = document.getElementById('configPanel');
+const closeConfigBtn = document.getElementById('closeConfigBtn');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const darkModeToggle = document.getElementById('darkModeToggle');
+const activePromptSelect = document.getElementById('activePrompt');
+const savePromptsBtn = document.getElementById('savePromptsBtn');
 
-    setupEventListeners() {
-        // Toggle monitoring
-        this.toggleMonitoringBtn.addEventListener('click', () => {
-            this.toggleMonitoring();
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    updateStatus('Ready', 'ready');
+    loadHistory();
+    updateStats();
+    setupConfigPanel();
+    loadConfig();
+    setupThemeToggle();
+    loadTheme();
+    setupPromptsConfig();
+    loadPrompts();
+});
+
+// Configuration panel setup
+function setupConfigPanel() {
+    settingsBtn.addEventListener('click', () => {
+        configPanel.style.display = 'flex';
+    });
+    
+    closeConfigBtn.addEventListener('click', () => {
+        configPanel.style.display = 'none';
+    });
+    
+    // Shortcut change buttons
+    document.querySelectorAll('.change-shortcut-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            changeShortcut(action);
         });
+    });
+    
+}
 
-        // Show/hide settings
-        this.showSettingsBtn.addEventListener('click', () => {
-            this.toggleSettings();
-        });
-
-        // Save settings
-        this.saveSettingsBtn.addEventListener('click', () => {
-            this.saveSettings();
-        });
-
-        // Save API keys
-        this.saveGeminiKeyBtn.addEventListener('click', () => {
-            this.saveApiKey('gemini', this.geminiKey.value);
-        });
-
-        this.savePerplexityKeyBtn.addEventListener('click', () => {
-            this.saveApiKey('perplexity', this.perplexityKey.value);
-        });
-
-        // Apply overall suggestion
-        this.applyOverallSuggestionBtn.addEventListener('click', () => {
-            this.applyOverallSuggestion();
-        });
-
-        // IPC event listeners
-        ipcRenderer.on('text-suggestions', (event, data) => {
-            this.displaySuggestions(data);
-        });
-
-        ipcRenderer.on('show-settings', () => {
-            this.showSettings();
-        });
-    }
-
-    async loadSettings() {
-        try {
-            this.settings = await ipcRenderer.invoke('get-settings');
-            
-            // Update UI with loaded settings
-            this.aiProvider.value = this.settings.aiProvider || 'gemini';
-            this.autoReplace.checked = this.settings.autoReplace || false;
-            this.showSuggestions.checked = this.settings.showSuggestions !== false;
-            this.grammarCheck.checked = this.settings.grammarCheck !== false;
-            this.toneAdjustment.checked = this.settings.toneAdjustment !== false;
-
-            // Load API keys
-            const geminiKey = await ipcRenderer.invoke('get-api-key', 'gemini');
-            const perplexityKey = await ipcRenderer.invoke('get-api-key', 'perplexity');
-            
-            if (geminiKey) this.geminiKey.value = '••••••••••••••••';
-            if (perplexityKey) this.perplexityKey.value = '••••••••••••••••';
-            
-        } catch (error) {
-            console.error('Error loading settings:', error);
-        }
-    }
-
-    async saveSettings() {
-        try {
-            const settings = {
-                aiProvider: this.aiProvider.value,
-                autoReplace: this.autoReplace.checked,
-                showSuggestions: this.showSuggestions.checked,
-                grammarCheck: this.grammarCheck.checked,
-                toneAdjustment: this.toneAdjustment.checked
-            };
-
-            const result = await ipcRenderer.invoke('save-settings', settings);
-            
-            if (result.success) {
-                this.settings = settings;
-                this.showNotification('Settings saved successfully!', 'success');
-            } else {
-                this.showNotification('Failed to save settings', 'error');
-            }
-        } catch (error) {
-            console.error('Error saving settings:', error);
-            this.showNotification('Error saving settings', 'error');
-        }
-    }
-
-    async saveApiKey(service, key) {
-        try {
-            const result = await ipcRenderer.invoke('save-api-key', { service, key });
-            
-            if (result.success) {
-                this.showNotification(`${service} API key saved successfully!`, 'success');
-                // Mask the key in the input
-                if (key) {
-                    const input = service === 'gemini' ? this.geminiKey : this.perplexityKey;
-                    input.value = '••••••••••••••••';
-                }
-            } else {
-                this.showNotification(`Failed to save ${service} API key`, 'error');
-            }
-        } catch (error) {
-            console.error(`Error saving ${service} API key:`, error);
-            this.showNotification(`Error saving ${service} API key`, 'error');
-        }
-    }
-
-    async toggleMonitoring() {
-        try {
-            this.isMonitoring = await ipcRenderer.invoke('toggle-monitoring');
-            this.updateMonitoringStatus();
-        } catch (error) {
-            console.error('Error toggling monitoring:', error);
-            this.showNotification('Error toggling monitoring', 'error');
-        }
-    }
-
-    updateMonitoringStatus() {
-        if (this.isMonitoring) {
-            this.statusDot.classList.add('active');
-            this.statusText.textContent = 'Monitoring';
-            this.toggleMonitoringBtn.textContent = 'Stop Monitoring';
-            this.toggleMonitoringBtn.classList.add('active');
-        } else {
-            this.statusDot.classList.remove('active');
-            this.statusText.textContent = 'Stopped';
-            this.toggleMonitoringBtn.textContent = 'Start Monitoring';
-            this.toggleMonitoringBtn.classList.remove('active');
-        }
-    }
-
-    toggleSettings() {
-        const isSettingsVisible = this.settingsPanel.style.display !== 'none';
+// Configuration management
+async function loadConfig() {
+    try {
+        // Load shortcuts from main process
+        const shortcuts = await ipcRenderer.invoke('get-shortcuts');
         
-        if (isSettingsVisible) {
-            this.settingsPanel.style.display = 'none';
-            this.suggestionsPanel.style.display = 'block';
-            this.showSettingsBtn.textContent = 'Settings';
-        } else {
-            this.settingsPanel.style.display = 'block';
-            this.suggestionsPanel.style.display = 'none';
-            this.showSettingsBtn.textContent = 'Suggestions';
-        }
-    }
-
-    showSettings() {
-        this.settingsPanel.style.display = 'block';
-        this.suggestionsPanel.style.display = 'none';
-        this.showSettingsBtn.textContent = 'Suggestions';
-    }
-
-    displaySuggestions(data) {
-        this.currentSuggestions = data;
+        // Update UI
+        document.getElementById('autoCopyShortcut').value = shortcuts.autoCopy || 'Cmd+Shift+T';
+        document.getElementById('altAutoCopyShortcut').value = shortcuts.altAutoCopy || 'Cmd+Shift+Space';
+        document.getElementById('analyzeClipboardShortcut').value = shortcuts.analyzeClipboard || 'Cmd+Shift+C';
         
-        // Update original text display
-        this.originalTextDisplay.textContent = data.originalText;
-        
-        // Hide no suggestions message
-        this.noSuggestions.style.display = 'none';
-        
-        // Display grammar issues
-        if (data.suggestions.grammarIssues && data.suggestions.grammarIssues.length > 0) {
-            this.displayGrammarIssues(data.suggestions.grammarIssues);
-        } else {
-            this.grammarSection.style.display = 'none';
-        }
-        
-        // Display improvements
-        if (data.suggestions.improvements && data.suggestions.improvements.length > 0) {
-            this.displayImprovements(data.suggestions.improvements);
-        } else {
-            this.improvementsSection.style.display = 'none';
-        }
-        
-        // Display tone suggestions
-        if (data.suggestions.toneSuggestions && data.suggestions.toneSuggestions.length > 0) {
-            this.displayToneSuggestions(data.suggestions.toneSuggestions);
-        } else {
-            this.toneSection.style.display = 'none';
-        }
-        
-        // Display overall suggestion
-        if (data.suggestions.overallSuggestion && data.suggestions.overallSuggestion !== data.originalText) {
-            this.displayOverallSuggestion(data.suggestions.overallSuggestion);
-        } else {
-            this.overallSection.style.display = 'none';
-        }
-    }
-
-    displayGrammarIssues(issues) {
-        this.grammarSection.style.display = 'block';
-        this.grammarSuggestions.innerHTML = '';
-        
-        issues.forEach(issue => {
-            const item = this.createSuggestionItem(issue);
-            this.grammarSuggestions.appendChild(item);
-        });
-    }
-
-    displayImprovements(improvements) {
-        this.improvementsSection.style.display = 'block';
-        this.improvementsSuggestions.innerHTML = '';
-        
-        improvements.forEach(improvement => {
-            const item = this.createSuggestionItem(improvement);
-            this.improvementsSuggestions.appendChild(item);
-        });
-    }
-
-    displayToneSuggestions(suggestions) {
-        this.toneSection.style.display = 'block';
-        this.toneSuggestions.innerHTML = '';
-        
-        suggestions.forEach(suggestion => {
-            const item = this.createSuggestionItem(suggestion);
-            this.toneSuggestions.appendChild(item);
-        });
-    }
-
-    displayOverallSuggestion(suggestion) {
-        this.overallSection.style.display = 'block';
-        this.overallSuggestionText.textContent = suggestion;
-    }
-
-    createSuggestionItem(item) {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        
-        div.innerHTML = `
-            <div class="suggestion-content">
-                <div class="suggestion-original">Original: "${item.original}"</div>
-                <div class="suggestion-suggested">Suggested: "${item.suggested}"</div>
-                <div class="suggestion-explanation">${item.explanation}</div>
-            </div>
-            <div class="suggestion-actions">
-                <button class="apply-suggestion-btn" onclick="app.applyIndividualSuggestion('${item.original}', '${item.suggested}')">
-                    ✨ Apply This Fix
-                </button>
-            </div>
-        `;
-        
-        return div;
-    }
-
-    async applyIndividualSuggestion(originalText, suggestedText) {
-        try {
-            // Show loading state
-            const button = event.target;
-            const originalButtonText = button.textContent;
-            button.textContent = 'Copying...';
-            button.disabled = true;
-            
-            const result = await ipcRenderer.invoke('replace-text', {
-                originalText: originalText,
-                newText: suggestedText
-            });
-            
-            if (result.success) {
-                this.showNotification('✨ Fix copied to clipboard! Press Cmd+V to paste.', 'success');
-                
-                // Show a helpful instruction
-                this.showReplacementInstructions(result.originalText, result.newText);
-                
-                // Update button to show it was applied
-                button.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    button.textContent = originalButtonText;
-                    button.disabled = false;
-                }, 3000);
-            } else {
-                this.showNotification(`❌ ${result.message}`, 'error');
-                button.textContent = originalButtonText;
-                button.disabled = false;
-            }
-        } catch (error) {
-            console.error('Error applying individual suggestion:', error);
-            this.showNotification('❌ Error applying suggestion', 'error');
-            const button = event.target;
-            button.textContent = '✨ Apply This Fix';
-            button.disabled = false;
-        }
-    }
-
-    async applyOverallSuggestion() {
-        if (!this.currentSuggestions) return;
-        
-        try {
-            // Show loading state
-            const button = document.getElementById('applyOverallSuggestion');
-            const originalText = button.textContent;
-            button.textContent = 'Copying to clipboard...';
-            button.disabled = true;
-            
-            const result = await ipcRenderer.invoke('replace-text', {
-                originalText: this.currentSuggestions.originalText,
-                newText: this.currentSuggestions.suggestions.overallSuggestion
-            });
-            
-            if (result.success) {
-                this.showNotification('✨ Text copied to clipboard! Press Cmd+V to paste.', 'success');
-                
-                // Show a helpful instruction
-                this.showReplacementInstructions(result.originalText, result.newText);
-                
-                // Update button to show it was applied
-                button.textContent = '✅ Copied! Press Cmd+V';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                }, 3000);
-            } else {
-                this.showNotification(`❌ ${result.message}`, 'error');
-                button.textContent = originalText;
-                button.disabled = false;
-            }
-        } catch (error) {
-            console.error('Error replacing text:', error);
-            this.showNotification('❌ Error replacing text', 'error');
-            const button = document.getElementById('applyOverallSuggestion');
-            button.textContent = 'Apply This Suggestion';
-            button.disabled = false;
-        }
-    }
-
-    showReplacementInstructions(originalText, newText) {
-        // Create a more detailed instruction panel
-        const instructionPanel = document.createElement('div');
-        instructionPanel.className = 'replacement-instructions';
-        instructionPanel.innerHTML = `
-            <div class="instruction-header">
-                <h3>📋 Text Replacement Instructions</h3>
-                <button class="close-instructions" onclick="this.parentElement.parentElement.remove()">×</button>
-            </div>
-            <div class="instruction-content">
-                <div class="text-comparison">
-                    <div class="text-item">
-                        <strong>Original:</strong>
-                        <div class="text-display original">"${originalText}"</div>
-                    </div>
-                    <div class="text-item">
-                        <strong>Improved:</strong>
-                        <div class="text-display improved">"${newText}"</div>
-                    </div>
-                </div>
-                <div class="instruction-steps">
-                    <h4>How to replace:</h4>
-                    <ol>
-                        <li>Go back to your application (Slack, Gmail, etc.)</li>
-                        <li>Select the original text you want to replace</li>
-                        <li>Press <kbd>Cmd+V</kbd> to paste the improved text</li>
-                    </ol>
-                </div>
-            </div>
-        `;
-        
-        // Style the instruction panel
-        instructionPanel.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid #3182ce;
-            border-radius: 12px;
-            padding: 20px;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            z-index: 2000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        `;
-        
-        // Add styles for the instruction content
-        const style = document.createElement('style');
-        style.textContent = `
-            .replacement-instructions .instruction-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-                border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 10px;
-            }
-            .replacement-instructions .instruction-header h3 {
-                margin: 0;
-                color: #2d3748;
-            }
-            .replacement-instructions .close-instructions {
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-                color: #718096;
-            }
-            .replacement-instructions .text-comparison {
-                margin-bottom: 20px;
-            }
-            .replacement-instructions .text-item {
-                margin-bottom: 15px;
-            }
-            .replacement-instructions .text-display {
-                padding: 10px;
-                border-radius: 6px;
-                margin-top: 5px;
-                font-family: monospace;
-                word-wrap: break-word;
-            }
-            .replacement-instructions .text-display.original {
-                background: #fed7d7;
-                border-left: 4px solid #e53e3e;
-            }
-            .replacement-instructions .text-display.improved {
-                background: #c6f6d5;
-                border-left: 4px solid #38a169;
-            }
-            .replacement-instructions .instruction-steps h4 {
-                margin: 0 0 10px 0;
-                color: #2d3748;
-            }
-            .replacement-instructions .instruction-steps ol {
-                margin: 0;
-                padding-left: 20px;
-            }
-            .replacement-instructions .instruction-steps li {
-                margin-bottom: 8px;
-                color: #4a5568;
-            }
-            .replacement-instructions kbd {
-                background: #f7fafc;
-                border: 1px solid #e2e8f0;
-                border-radius: 4px;
-                padding: 2px 6px;
-                font-family: monospace;
-                font-size: 12px;
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Add to page
-        document.body.appendChild(instructionPanel);
-        
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-            if (instructionPanel.parentElement) {
-                instructionPanel.remove();
-            }
-        }, 10000);
-    }
-
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        
-        // Style the notification
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
-            max-width: 300px;
-            word-wrap: break-word;
-        `;
-        
-        // Set background color based on type
-        const colors = {
-            success: '#38a169',
-            error: '#e53e3e',
-            info: '#3182ce'
-        };
-        notification.style.backgroundColor = colors[type] || colors.info;
-        
-        // Add to document
-        document.body.appendChild(notification);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+        // Update display
+        updateShortcutDisplay();
+    } catch (error) {
+        console.error('Error loading config:', error);
     }
 }
 
-// Add CSS for notifications
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+async function saveConfig() {
+    try {
+        // Save shortcuts to main process
+        const shortcuts = {
+            autoCopy: document.getElementById('autoCopyShortcut').value,
+            altAutoCopy: document.getElementById('altAutoCopyShortcut').value,
+            analyzeClipboard: document.getElementById('analyzeClipboardShortcut').value
+        };
+        
+        // Update each shortcut
+        for (const [action, shortcut] of Object.entries(shortcuts)) {
+            await ipcRenderer.invoke('update-shortcut', { action, shortcut });
+        }
+    } catch (error) {
+        console.error('Error saving config:', error);
+    }
+}
+
+function changeShortcut(action) {
+    const input = document.getElementById(action + 'Shortcut');
+    const oldValue = input.value;
+    
+    input.value = 'Press new shortcut...';
+    input.readOnly = false;
+    input.focus();
+    
+    const handleKeyDown = async (e) => {
+        e.preventDefault();
+        const modifiers = [];
+        
+        if (e.metaKey) modifiers.push('CommandOrControl');
+        if (e.ctrlKey) modifiers.push('Ctrl');
+        if (e.altKey) modifiers.push('Alt');
+        if (e.shiftKey) modifiers.push('Shift');
+        
+        const key = e.key === ' ' ? 'Space' : e.key;
+        const newShortcut = modifiers.length > 0 ? modifiers.join('+') + '+' + key : key;
+        
+        input.value = newShortcut;
+        input.readOnly = true;
+        input.blur();
+        
+        // Save the new shortcut
+        await saveConfig();
+        updateShortcutDisplay();
+        
+        document.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+}
+
+function updateShortcutDisplay() {
+    document.getElementById('displayAutoCopyShortcut').textContent = document.getElementById('autoCopyShortcut').value;
+    document.getElementById('displayAltAutoCopyShortcut').textContent = document.getElementById('altAutoCopyShortcut').value;
+    document.getElementById('displayAnalyzeClipboardShortcut').textContent = document.getElementById('analyzeClipboardShortcut').value;
+}
+
+// Theme Management
+function setupThemeToggle() {
+    // Header theme toggle
+    themeToggleBtn.addEventListener('click', () => {
+        toggleTheme();
+    });
+    
+    // Settings panel toggle
+    darkModeToggle.addEventListener('change', (e) => {
+        setTheme(e.target.checked ? 'dark' : 'light');
+    });
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('ai-reponder-theme') || 'light';
+    setTheme(savedTheme);
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    darkModeToggle.checked = theme === 'dark';
+    localStorage.setItem('ai-reponder-theme', theme);
+    
+    // Update theme toggle button state
+    const sunIcon = themeToggleBtn.querySelector('.sun-icon');
+    const moonIcon = themeToggleBtn.querySelector('.moon-icon');
+    
+    if (theme === 'dark') {
+        sunIcon.style.opacity = '0';
+        moonIcon.style.opacity = '1';
+    } else {
+        sunIcon.style.opacity = '1';
+        moonIcon.style.opacity = '0';
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+}
+
+// Prompts Management
+function setupPromptsConfig() {
+    // Active prompt selector
+    activePromptSelect.addEventListener('change', (e) => {
+        showPromptTemplate(e.target.value);
+    });
+    
+    // Save prompts button
+    savePromptsBtn.addEventListener('click', () => {
+        savePrompts();
+    });
+}
+
+async function loadPrompts() {
+    try {
+        const prompts = await ipcRenderer.invoke('get-prompts');
+        
+        // Set active prompt
+        activePromptSelect.value = prompts.activePrompt || 'professional';
+        showPromptTemplate(activePromptSelect.value);
+        
+        // Load prompt templates
+        Object.keys(prompts.templates).forEach(template => {
+            const textarea = document.querySelector(`[data-template="${template}"] .prompt-textarea`);
+            if (textarea) {
+                textarea.value = prompts.templates[template];
+            }
+        });
+    } catch (error) {
+        console.error('Error loading prompts:', error);
+    }
+}
+
+function showPromptTemplate(template) {
+    // Hide all templates
+    document.querySelectorAll('.prompt-template').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    // Show selected template
+    const selectedTemplate = document.querySelector(`[data-template="${template}"]`);
+    if (selectedTemplate) {
+        selectedTemplate.classList.add('active');
+    }
+}
+
+async function savePrompts() {
+    try {
+        const templates = {};
+        document.querySelectorAll('.prompt-template').forEach(template => {
+            const templateName = template.dataset.template;
+            const textarea = template.querySelector('.prompt-textarea');
+            if (textarea) {
+                templates[templateName] = textarea.value;
+            }
+        });
+        
+        const prompts = {
+            activePrompt: activePromptSelect.value,
+            templates: templates
+        };
+        
+        await ipcRenderer.invoke('save-prompts', prompts);
+        
+        // Show success feedback
+        savePromptsBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Saved!
+        `;
+        savePromptsBtn.style.background = 'var(--accent-success)';
+        
+        setTimeout(() => {
+            savePromptsBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3H16L21 8V19A2 2 0 0 1 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="17,21 17,13 7,13 7,21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="7,3 7,8 15,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Save Prompts
+            `;
+            savePromptsBtn.style.background = 'var(--accent-primary)';
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error saving prompts:', error);
+    }
+}
+
+
+// Update status indicator
+function updateStatus(text, status) {
+    statusText.textContent = text;
+    statusDot.className = `status-dot ${status}`;
+}
+
+// Update statistics
+function updateStats() {
+    acceptedCountEl.textContent = acceptedCount;
+    rejectedCountEl.textContent = rejectedCount;
+}
+
+// Add suggestion to history
+function addToHistory(originalText, suggestion, action) {
+    const historyItem = {
+        id: Date.now(),
+        originalText: originalText,
+        suggestion: suggestion,
+        action: action, // 'accepted' or 'rejected'
+        timestamp: new Date()
+    };
+    
+    suggestionHistory.unshift(historyItem);
+    
+    // Keep only last 50 items
+    if (suggestionHistory.length > 50) {
+        suggestionHistory = suggestionHistory.slice(0, 50);
     }
     
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+    // Update counts
+    if (action === 'accepted') {
+        acceptedCount++;
+    } else if (action === 'rejected') {
+        rejectedCount++;
     }
-`;
-document.head.appendChild(style);
+    
+    updateStats();
+    renderHistory();
+    saveHistory();
+}
 
-// Initialize the UI when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new UIManager();
-});
+// Render history list
+function renderHistory() {
+    if (suggestionHistory.length === 0) {
+        historyList.innerHTML = `
+            <div class="no-history">
+                <p>No suggestions yet. Use <strong>Cmd+Shift+T</strong> to get started!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    historyList.innerHTML = suggestionHistory.map(item => `
+        <div class="history-item ${item.action}">
+            <div class="history-item-header">
+                <span class="history-item-status ${item.action}">${item.action}</span>
+                <span class="history-item-time">${formatTime(item.timestamp)}</span>
+            </div>
+            <div class="history-item-text">
+                <strong>Original:</strong> ${truncateText(item.originalText, 100)}<br>
+                <strong>Suggestion:</strong> ${truncateText(item.suggestion, 100)}
+            </div>
+        </div>
+    `).join('');
+}
 
+// Format time
+function formatTime(date) {
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+}
 
+// Truncate text
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
 
+// Save history to localStorage
+function saveHistory() {
+    localStorage.setItem('ai-reponder-history', JSON.stringify({
+        history: suggestionHistory,
+        acceptedCount: acceptedCount,
+        rejectedCount: rejectedCount
+    }));
+}
 
+// Load history from localStorage
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem('ai-reponder-history');
+        if (saved) {
+            const data = JSON.parse(saved);
+            suggestionHistory = data.history || [];
+            acceptedCount = data.acceptedCount || 0;
+            rejectedCount = data.rejectedCount || 0;
+        }
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+       // Listen for suggestion events from main process
+       ipcRenderer.on('suggestion-accepted', (event, data) => {
+           addToHistory(data.originalText, data.suggestion, 'accepted');
+           updateStatus('Suggestion accepted!', 'success');
+           setTimeout(() => updateStatus('Ready', 'ready'), 2000);
+       });
+
+       ipcRenderer.on('suggestion-rejected', (event, data) => {
+           addToHistory(data.originalText, data.suggestion, 'rejected');
+           updateStatus('Suggestion rejected', 'warning');
+           setTimeout(() => updateStatus('Ready', 'ready'), 2000);
+       });
+
+       // Listen for text analysis events
+       ipcRenderer.on('text-suggestions', (event, data) => {
+           updateStatus('AI suggestions ready!', 'processing');
+           setTimeout(() => updateStatus('Ready', 'ready'), 1000);
+       });
+
+       // Listen for app status updates
+       ipcRenderer.on('app-status', (event, status) => {
+           updateStatus(status.message, status.type);
+       });
+
+// Clear history function (for future use)
+function clearHistory() {
+    suggestionHistory = [];
+    acceptedCount = 0;
+    rejectedCount = 0;
+    updateStats();
+    renderHistory();
+    saveHistory();
+}

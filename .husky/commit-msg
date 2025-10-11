@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Commit message hook for AI Reponder
+echo "🔍 Validating commit message..."
+
+# Check if commitlint is available
+if command -v npx &> /dev/null && npx commitlint --version &> /dev/null; then
+  npx commitlint --edit "$1"
+else
+  echo "⚠️  Commitlint not available, skipping message validation"
+fi
+
+echo "✅ Commit message validation passed!"

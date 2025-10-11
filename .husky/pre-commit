@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-commit hook for AI Reponder
+echo "🔍 Running pre-commit checks..."
+
+# Run the test script
+./scripts/test.sh unit
+
+# Check for console.log statements
+echo "🔍 Checking for console.log statements..."
+if grep -r "console\.log" src/ --exclude-dir=node_modules; then
+  echo "❌ Found console.log statements. Please remove them before committing."
+  exit 1
+fi
+
+# Check for TODO/FIXME comments
+echo "🔍 Checking for TODO/FIXME comments..."
+if grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules; then
+  echo "⚠️  Found TODO/FIXME comments. Consider addressing them."
+  # Don't fail the commit, just warn
+fi
+
+echo "✅ Pre-commit checks passed!"

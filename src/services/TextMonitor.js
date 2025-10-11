@@ -1,5 +1,4 @@
-const { clipboard } = require('electron');
-const robot = require('robotjs');
+const { clipboard, globalShortcut } = require('electron');
 // const activeWin = require('active-win'); // Disabled to avoid permission issues
 
 class TextMonitor {
@@ -25,12 +24,10 @@ class TextMonitor {
     this.callback = callback;
     this.isMonitoring = true;
     
-    // Start multiple monitoring methods for better reliability
-    this.startKeyboardMonitoring();
+    // Only start clipboard monitoring - no continuous keystroke monitoring
     this.startClipboardMonitoring();
-    this.startWindowMonitoring();
     
-    console.log('Enhanced text monitoring started with multiple capture methods');
+    console.log('Text monitoring started - use Cmd+Shift+C to analyze text');
   }
 
   async stop() {
@@ -213,50 +210,37 @@ class TextMonitor {
           }
         }
         
-        // Check for text changes in active window
-        this.checkForActiveText();
+        // Check for text changes using improved clipboard monitoring
+        this.checkForTextChanges();
         
       } catch (error) {
         // Silently handle errors to avoid spam
       }
-    }, 50); // Check every 50ms for smoother capture
+    }, 100); // Check every 100ms for better performance
   }
 
-  checkForActiveText() {
+  checkForTextChanges() {
     try {
-      // Use robotjs to get current screen content and detect text changes
-      // This is a more direct approach than clipboard monitoring
+      // Improved text change detection without robotjs
       const currentTime = Date.now();
       
       // Only check if enough time has passed since last check
-      if (currentTime - this.lastKeyTime < 100) return;
+      if (currentTime - this.lastKeyTime < 200) return;
       
       this.lastKeyTime = currentTime;
       
-      // Simulate a copy operation to get current selection
-      // This is more reliable than clipboard monitoring alone
-      const previousClipboard = clipboard.readText();
+      // Use a more sophisticated approach to detect text changes
+      // This method focuses on clipboard monitoring with better heuristics
+      const currentClipboard = clipboard.readText();
       
-      // Simulate Cmd+C to capture current selection
-      robot.keyTap('c', 'command');
-      
-      // Small delay to ensure copy operation completes
-      setTimeout(() => {
-        try {
-          const newClipboard = clipboard.readText();
-          
-          // If clipboard changed and looks like typed text
-          if (newClipboard && newClipboard !== previousClipboard && 
-              newClipboard !== this.lastProcessedText && 
-              this.isTypedText(newClipboard)) {
-            
-            this.lastProcessedText = newClipboard;
-            this.processText(newClipboard);
-          }
-        } catch (error) {
-          // Silently handle errors
-        }
-      }, 10);
+      // Check if clipboard content has changed and looks like typed text
+      if (currentClipboard && 
+          currentClipboard !== this.lastProcessedText && 
+          this.isTypedText(currentClipboard)) {
+        
+        this.lastProcessedText = currentClipboard;
+        this.processText(currentClipboard);
+      }
       
     } catch (error) {
       // Silently handle errors to avoid spam
