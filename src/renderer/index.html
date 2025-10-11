@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Reponder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span class="icon">✍️</span>
+                <h1>AI Reponder</h1>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Stopped</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Settings Panel -->
+            <div class="panel" id="settingsPanel" style="display: none;">
+                <h2>Settings</h2>
+                
+                <div class="setting-group">
+                    <label for="aiProvider">AI Provider:</label>
+                    <select id="aiProvider">
+                        <option value="gemini">Google Gemini</option>
+                        <option value="perplexity">Perplexity AI</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label for="geminiKey">Gemini API Key:</label>
+                    <input type="password" id="geminiKey" placeholder="Enter your Gemini API key">
+                    <button id="saveGeminiKey">Save</button>
+                </div>
+
+                <div class="setting-group">
+                    <label for="perplexityKey">Perplexity API Key:</label>
+                    <input type="password" id="perplexityKey" placeholder="Enter your Perplexity API key">
+                    <button id="savePerplexityKey">Save</button>
+                </div>
+
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="autoReplace"> Auto-replace text
+                    </label>
+                </div>
+
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="showSuggestions" checked> Show suggestions
+                    </label>
+                </div>
+
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="grammarCheck" checked> Grammar check
+                    </label>
+                </div>
+
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="toneAdjustment" checked> Tone adjustment
+                    </label>
+                </div>
+
+                <button id="saveSettings" class="primary-button">Save Settings</button>
+            </div>
+
+            <!-- Suggestions Panel -->
+            <div class="panel" id="suggestionsPanel">
+                <h2>Writing Suggestions</h2>
+                
+                <div class="original-text">
+                    <h3>Original Text:</h3>
+                    <div class="text-display" id="originalTextDisplay">No text detected yet...</div>
+                </div>
+
+                <div class="suggestions-container">
+                    <!-- Grammar Issues -->
+                    <div class="suggestion-section" id="grammarSection" style="display: none;">
+                        <h3>Grammar Issues</h3>
+                        <div class="suggestions-list" id="grammarSuggestions"></div>
+                    </div>
+
+                    <!-- Improvements -->
+                    <div class="suggestion-section" id="improvementsSection" style="display: none;">
+                        <h3>Improvements</h3>
+                        <div class="suggestions-list" id="improvementsSuggestions"></div>
+                    </div>
+
+                    <!-- Tone Suggestions -->
+                    <div class="suggestion-section" id="toneSection" style="display: none;">
+                        <h3>Tone Suggestions</h3>
+                        <div class="suggestions-list" id="toneSuggestions"></div>
+                    </div>
+
+                    <!-- Overall Suggestion -->
+                    <div class="suggestion-section" id="overallSection" style="display: none;">
+                        <h3>Overall Suggestion</h3>
+                        <div class="overall-suggestion">
+                            <div class="text-display" id="overallSuggestionText"></div>
+                            <button id="applyOverallSuggestion" class="primary-button">Apply This Suggestion</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="no-suggestions" id="noSuggestions">
+                    <p>Start typing in any application to see AI-powered writing suggestions!</p>
+                    <p class="hint">Make sure monitoring is enabled and you have configured an AI provider.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <button id="toggleMonitoring" class="primary-button">Start Monitoring</button>
+            <button id="showSettingsBtn" class="secondary-button">Settings</button>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
+
+
+
+

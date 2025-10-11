@@ -1,0 +1,54 @@
+{
+  "name": "ai-reponder",
+  "version": "1.0.0",
+  "description": "AI-powered writing assistant that monitors text across desktop applications and provides real-time grammar and writing suggestions",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "keywords": [
+    "ai",
+    "writing",
+    "grammar",
+    "slack",
+    "assistant"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3",
+    "active-win": "^7.0.0",
+    "axios": "^1.6.0",
+    "dotenv": "^17.2.3",
+    "electron-clipboard-ex": "^1.0.0",
+    "electron-store": "^8.1.0",
+    "openai": "^4.20.0"
+  },
+  "build": {
+    "appId": "com.aiwritingassistant.app",
+    "productName": "AI Writing Assistant",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
