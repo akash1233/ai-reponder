@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check if .env file exists and has the required API key
-cd /Users/ds/ai-reponser
+cd /Users/ds/ai-reponder
 
 if [ ! -f .env ]; then
     echo "❌ .env file not found!"

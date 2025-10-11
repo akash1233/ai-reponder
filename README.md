@@ -18,7 +18,7 @@ AI-powered writing assistant that monitors text across desktop applications and 
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd ai-reponser
+cd ai-reponder
 ```
 
 2. Install dependencies:
