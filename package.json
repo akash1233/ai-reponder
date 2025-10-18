@@ -40,7 +40,7 @@
     "active-win": "^7.0.0",
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
-    "electron-store": "^8.1.0",
+    "electron-store": "^11.0.2",
     "openai": "^4.20.0"
   },
   "devDependencies": {
