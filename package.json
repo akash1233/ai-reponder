@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3",
+    "@commitlint/config-conventional": "^20.0.0",
     "@types/jest": "^29.5.8",
     "electron": "^38.2.2",
     "electron-builder": "^24.9.1",
