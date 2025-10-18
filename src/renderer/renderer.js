@@ -516,7 +516,7 @@ async function testApiKeys() {
     const testBtn = document.getElementById('testKeysBtn');
     
     if (!perplexityKey && !geminiKey) {
-        alert('Please enter at least one API key to test.');
+        console.error('Please enter at least one API key to test.');
         return;
     }
     
@@ -542,13 +542,13 @@ async function testApiKeys() {
         updateTestResults(result);
         
         if (result.success) {
-            alert('API keys tested successfully!');
+            console.log('API keys tested successfully!');
         } else {
-            alert(`API key test failed: ${result.error}`);
+            console.error(`API key test failed: ${result.error}`);
         }
     } catch (error) {
         console.error('Error testing API keys:', error);
-        alert(`Error testing API keys: ${error.message}`);
+        console.error(`Error testing API keys: ${error.message}`);
     } finally {
         // Re-enable button
         testBtn.disabled = false;
@@ -600,7 +600,7 @@ function saveApiKeys() {
     const geminiKey = document.getElementById('geminiApiKey').value.trim();
     
     if (!perplexityKey && !geminiKey) {
-        alert('Please enter at least one API key.');
+        console.error('Please enter at least one API key.');
         return;
     }
     
