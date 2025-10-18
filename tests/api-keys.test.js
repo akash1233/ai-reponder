@@ -109,7 +109,11 @@ jest.mock('electron', () => ({
 }));
 
 // Mock alert
-global.alert = jest.fn();
+global.console = {
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn()
+};
 
 describe('API Keys Configuration', () => {
   let renderer;
@@ -334,7 +338,7 @@ describe('API Keys Configuration', () => {
       
       rendererModule.saveApiKeys();
       
-      expect(global.alert).toHaveBeenCalledWith('Please enter at least one API key.');
+      expect(global.console.error).toHaveBeenCalledWith('Please enter at least one API key.');
       expect(ipcRenderer.send).not.toHaveBeenCalled();
     });
 
@@ -377,7 +381,7 @@ describe('API Keys Configuration', () => {
         gemini: 'AIzaSyAI7a_bFh8C3fWwImD67u_pDLhrBnI379g'
       });
       
-      expect(global.alert).toHaveBeenCalledWith('API keys tested successfully!');
+      expect(global.console.log).toHaveBeenCalledWith('API keys tested successfully!');
     });
 
     test('should handle API key test failures', async () => {
@@ -398,7 +402,7 @@ describe('API Keys Configuration', () => {
       
       await rendererModule.testApiKeys();
       
-      expect(global.alert).toHaveBeenCalledWith('API key test failed: Invalid API key');
+      expect(global.console.error).toHaveBeenCalledWith('API key test failed: Invalid API key');
     });
 
     test('should show alert when no keys provided for testing', async () => {
@@ -410,7 +414,7 @@ describe('API Keys Configuration', () => {
       
       await rendererModule.testApiKeys();
       
-      expect(global.alert).toHaveBeenCalledWith('Please enter at least one API key to test.');
+      expect(global.console.error).toHaveBeenCalledWith('Please enter at least one API key to test.');
       expect(ipcRenderer.invoke).not.toHaveBeenCalled();
     });
 
@@ -426,7 +430,7 @@ describe('API Keys Configuration', () => {
       
       await rendererModule.testApiKeys();
       
-      expect(global.alert).toHaveBeenCalledWith('Error testing API keys: Network error');
+      expect(global.console.error).toHaveBeenCalledWith('Error testing API keys: Network error');
     });
   });
 
