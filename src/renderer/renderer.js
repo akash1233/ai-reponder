@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
     setupPromptsConfig();
     loadPrompts();
+    setupApiKeysConfig();
 });
 
 // Configuration panel setup
@@ -42,26 +43,24 @@ function setupConfigPanel() {
         configPanel.style.display = 'none';
     });
     
-    // Shortcut change buttons
-    document.querySelectorAll('.change-shortcut-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            changeShortcut(action);
+    // Shortcut change button
+    const changeShortcutBtn = document.getElementById('changeShortcutBtn');
+    if (changeShortcutBtn) {
+        changeShortcutBtn.addEventListener('click', () => {
+            changeShortcut();
         });
-    });
+    }
     
 }
 
 // Configuration management
 async function loadConfig() {
     try {
-        // Load shortcuts from main process
-        const shortcuts = await ipcRenderer.invoke('get-shortcuts');
+        // Load shortcut from main process
+        const shortcut = await ipcRenderer.invoke('get-shortcut');
         
         // Update UI
-        document.getElementById('autoCopyShortcut').value = shortcuts.autoCopy || 'Cmd+Shift+T';
-        document.getElementById('altAutoCopyShortcut').value = shortcuts.altAutoCopy || 'Cmd+Shift+Space';
-        document.getElementById('analyzeClipboardShortcut').value = shortcuts.analyzeClipboard || 'Cmd+Shift+C';
+        document.getElementById('shortcutInput').value = shortcut || 'Cmd+Shift+T';
         
         // Update display
         updateShortcutDisplay();
@@ -72,24 +71,16 @@ async function loadConfig() {
 
 async function saveConfig() {
     try {
-        // Save shortcuts to main process
-        const shortcuts = {
-            autoCopy: document.getElementById('autoCopyShortcut').value,
-            altAutoCopy: document.getElementById('altAutoCopyShortcut').value,
-            analyzeClipboard: document.getElementById('analyzeClipboardShortcut').value
-        };
-        
-        // Update each shortcut
-        for (const [action, shortcut] of Object.entries(shortcuts)) {
-            await ipcRenderer.invoke('update-shortcut', { action, shortcut });
-        }
+        // Save shortcut to main process
+        const shortcut = document.getElementById('shortcutInput').value;
+        await ipcRenderer.invoke('update-shortcut', shortcut);
     } catch (error) {
         console.error('Error saving config:', error);
     }
 }
 
-function changeShortcut(action) {
-    const input = document.getElementById(action + 'Shortcut');
+function changeShortcut() {
+    const input = document.getElementById('shortcutInput');
     const oldValue = input.value;
     
     input.value = 'Press new shortcut...';
@@ -123,9 +114,7 @@ function changeShortcut(action) {
 }
 
 function updateShortcutDisplay() {
-    document.getElementById('displayAutoCopyShortcut').textContent = document.getElementById('autoCopyShortcut').value;
-    document.getElementById('displayAltAutoCopyShortcut').textContent = document.getElementById('altAutoCopyShortcut').value;
-    document.getElementById('displayAnalyzeClipboardShortcut').textContent = document.getElementById('analyzeClipboardShortcut').value;
+    document.getElementById('displayShortcut').textContent = document.getElementById('shortcutInput').value;
 }
 
 // Theme Management
@@ -380,7 +369,7 @@ function loadHistory() {
 
        ipcRenderer.on('suggestion-rejected', (event, data) => {
            addToHistory(data.originalText, data.suggestion, 'rejected');
-           updateStatus('Suggestion rejected', 'warning');
+           updateStatus('Suggestion rejected', 'error');
            setTimeout(() => updateStatus('Ready', 'ready'), 2000);
        });
 
@@ -403,4 +392,257 @@ function clearHistory() {
     updateStats();
     renderHistory();
     saveHistory();
+}
+
+// API Keys Configuration
+function setupApiKeysConfig() {
+    const perplexityInput = document.getElementById('perplexityApiKey');
+    const geminiInput = document.getElementById('geminiApiKey');
+    const testKeysBtn = document.getElementById('testKeysBtn');
+    const saveKeysBtn = document.getElementById('saveKeysBtn');
+    
+    // Load existing API keys
+    loadApiKeys();
+    
+    // Setup visibility toggles
+    document.querySelectorAll('.toggle-visibility-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.target.closest('button').dataset.target;
+            const input = document.getElementById(targetId);
+            const eyeIcon = e.target.closest('button').querySelector('.eye-icon');
+            const eyeOffIcon = e.target.closest('button').querySelector('.eye-off-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.style.display = 'none';
+                eyeOffIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeIcon.style.display = 'block';
+                eyeOffIcon.style.display = 'none';
+            }
+        });
+    });
+    
+    // Setup input validation
+    [perplexityInput, geminiInput].forEach(input => {
+        input.addEventListener('input', () => {
+            validateApiKey(input);
+        });
+    });
+    
+    // Setup test keys button
+    testKeysBtn.addEventListener('click', async () => {
+        await testApiKeys();
+    });
+    
+    // Setup save keys button
+    saveKeysBtn.addEventListener('click', () => {
+        saveApiKeys();
+    });
+}
+
+function loadApiKeys() {
+    // Load from localStorage or request from main process
+    const savedKeys = localStorage.getItem('apiKeys');
+    if (savedKeys) {
+        try {
+            const keys = JSON.parse(savedKeys);
+            document.getElementById('perplexityApiKey').value = keys.perplexity || '';
+            document.getElementById('geminiApiKey').value = keys.gemini || '';
+            updateApiKeyStatus();
+        } catch (error) {
+            console.error('Error loading API keys:', error);
+        }
+    }
+    
+    // Also try to get from main process
+    ipcRenderer.invoke('get-api-keys').then(keys => {
+        if (keys) {
+            document.getElementById('perplexityApiKey').value = keys.perplexity || '';
+            document.getElementById('geminiApiKey').value = keys.gemini || '';
+            updateApiKeyStatus();
+        }
+    }).catch(error => {
+        console.error('Error getting API keys from main process:', error);
+    });
+}
+
+function validateApiKey(input) {
+    const value = input.value.trim();
+    const statusEl = document.getElementById(input.id.replace('ApiKey', 'Status'));
+    const indicator = statusEl.querySelector('.status-indicator');
+    const text = statusEl.querySelector('.status-text');
+    
+    if (!value) {
+        indicator.className = 'status-indicator';
+        text.className = 'status-text';
+        text.textContent = 'Not configured';
+        return false;
+    }
+    
+    // Basic validation
+    let isValid = false;
+    if (input.id === 'perplexityApiKey') {
+        isValid = value.startsWith('pplx-') || value.startsWith('pplx_');
+    } else if (input.id === 'geminiApiKey') {
+        isValid = value.startsWith('AIza') && value.length > 20;
+    }
+    
+    if (isValid) {
+        indicator.className = 'status-indicator valid';
+        text.className = 'status-text valid';
+        text.textContent = 'Valid format';
+    } else {
+        indicator.className = 'status-indicator invalid';
+        text.className = 'status-text invalid';
+        text.textContent = 'Invalid format';
+    }
+    
+    return isValid;
+}
+
+function updateApiKeyStatus() {
+    const perplexityInput = document.getElementById('perplexityApiKey');
+    const geminiInput = document.getElementById('geminiApiKey');
+    
+    validateApiKey(perplexityInput);
+    validateApiKey(geminiInput);
+}
+
+async function testApiKeys() {
+    const perplexityKey = document.getElementById('perplexityApiKey').value.trim();
+    const geminiKey = document.getElementById('geminiApiKey').value.trim();
+    const testBtn = document.getElementById('testKeysBtn');
+    
+    if (!perplexityKey && !geminiKey) {
+        alert('Please enter at least one API key to test.');
+        return;
+    }
+    
+    // Disable button and show loading
+    testBtn.disabled = true;
+    testBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="animate-spin">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+            </circle>
+        </svg>
+        Testing...
+    `;
+    
+    try {
+        const result = await ipcRenderer.invoke('test-api-keys', {
+            perplexity: perplexityKey,
+            gemini: geminiKey
+        });
+        
+        // Update status indicators
+        updateTestResults(result);
+        
+        if (result.success) {
+            alert('API keys tested successfully!');
+        } else {
+            alert(`API key test failed: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error testing API keys:', error);
+        alert(`Error testing API keys: ${error.message}`);
+    } finally {
+        // Re-enable button
+        testBtn.disabled = false;
+        testBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Test API Keys
+        `;
+    }
+}
+
+function updateTestResults(result) {
+    const perplexityStatus = document.getElementById('perplexityStatus');
+    const geminiStatus = document.getElementById('geminiStatus');
+    
+    // Update Perplexity status
+    const perplexityIndicator = perplexityStatus.querySelector('.status-indicator');
+    const perplexityText = perplexityStatus.querySelector('.status-text');
+    
+    if (result.perplexity && result.perplexity.success) {
+        perplexityIndicator.className = 'status-indicator valid';
+        perplexityText.className = 'status-text valid';
+        perplexityText.textContent = 'Working';
+    } else if (result.perplexity && !result.perplexity.success) {
+        perplexityIndicator.className = 'status-indicator invalid';
+        perplexityText.className = 'status-text invalid';
+        perplexityText.textContent = 'Failed';
+    }
+    
+    // Update Gemini status
+    const geminiIndicator = geminiStatus.querySelector('.status-indicator');
+    const geminiText = geminiStatus.querySelector('.status-text');
+    
+    if (result.gemini && result.gemini.success) {
+        geminiIndicator.className = 'status-indicator valid';
+        geminiText.className = 'status-text valid';
+        geminiText.textContent = 'Working';
+    } else if (result.gemini && !result.gemini.success) {
+        geminiIndicator.className = 'status-indicator invalid';
+        geminiText.className = 'status-text invalid';
+        geminiText.textContent = 'Failed';
+    }
+}
+
+function saveApiKeys() {
+    const perplexityKey = document.getElementById('perplexityApiKey').value.trim();
+    const geminiKey = document.getElementById('geminiApiKey').value.trim();
+    
+    if (!perplexityKey && !geminiKey) {
+        alert('Please enter at least one API key.');
+        return;
+    }
+    
+    const keys = {
+        perplexity: perplexityKey,
+        gemini: geminiKey
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('apiKeys', JSON.stringify(keys));
+    
+    // Send to main process
+    ipcRenderer.send('save-api-keys', keys);
+    
+    // Update status
+    updateApiKeyStatus();
+    
+    // Show success message
+    const saveBtn = document.getElementById('saveKeysBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Saved!
+    `;
+    saveBtn.style.background = 'var(--accent-success)';
+    
+    setTimeout(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.style.background = '';
+    }, 2000);
+}
+
+// Export functions for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        validateApiKey,
+        loadApiKeys,
+        saveApiKeys,
+        testApiKeys,
+        updateApiKeyStatus,
+        updateTestResults
+    };
 }

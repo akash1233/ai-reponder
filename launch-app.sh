@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Launch AI Reponder
-cd /Users/ds/ai-reponder
+cd /Users/ds/ai-reponser
 
 # Check if the app is already running
 if pgrep -f "electron.*ai-reponder" > /dev/null; then

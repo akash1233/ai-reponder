@@ -342,7 +342,11 @@ describe('AIService', () => {
   describe('Gemini Integration (Disabled)', () => {
     test('should not use Gemini when disabled', async () => {
       // Mock environment to disable Gemini
+      const originalGeminiKey = process.env.GEMINI_API_KEY;
       process.env.GEMINI_API_KEY = undefined;
+      
+      // Clear module cache to force re-import
+      delete require.cache[require.resolve('../src/services/AIService')];
       
       // Recreate service without Gemini
       const AIService = require('../src/services/AIService');
@@ -351,6 +355,9 @@ describe('AIService', () => {
       await expect(aiServiceWithoutGemini.getSuggestions('test text', {
         provider: 'gemini'
       })).rejects.toThrow('No AI provider configured');
+      
+      // Restore original key
+      process.env.GEMINI_API_KEY = originalGeminiKey;
     });
   });
 });

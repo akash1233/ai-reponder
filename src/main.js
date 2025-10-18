@@ -27,7 +27,8 @@ class AIWritingAssistant {
 
   createWindow() {
     this.mainWindow = new BrowserWindow({
-      width: 400,
+      width: 450,
+      minWidth: 400,
       height: 600,
       webPreferences: {
         nodeIntegration: true,
@@ -135,6 +136,79 @@ class AIWritingAssistant {
       return this.store.get(`apiKeys.${service}`, '');
     });
 
+    // New API keys handlers for UI
+    ipcMain.handle('get-api-keys', async () => {
+      return {
+        perplexity: this.store.get('apiKeys.perplexity', ''),
+        gemini: this.store.get('apiKeys.gemini', '')
+      };
+    });
+
+    ipcMain.handle('save-api-keys', async (event, keys) => {
+      try {
+        this.store.set('apiKeys', keys);
+        
+        // Update environment variables for current session
+        if (keys.perplexity) {
+          process.env.PERPLEXITY_API_KEY = keys.perplexity;
+          await this.aiService.initializePerplexity(keys.perplexity);
+        }
+        if (keys.gemini) {
+          process.env.GEMINI_API_KEY = keys.gemini;
+          await this.aiService.initializeGemini(keys.gemini);
+        }
+        
+        console.log('API keys saved and initialized');
+        return { success: true };
+      } catch (error) {
+        console.error('Error saving API keys:', error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle('test-api-keys', async (event, keys) => {
+      try {
+        const results = {
+          success: false,
+          perplexity: null,
+          gemini: null
+        };
+
+        // Test Perplexity key
+        if (keys.perplexity) {
+          try {
+            const testService = new AIService();
+            await testService.initializePerplexity(keys.perplexity);
+            const testResult = await testService.getSuggestions('test', { provider: 'perplexity' });
+            results.perplexity = { success: true, message: 'Perplexity API key is working' };
+          } catch (error) {
+            results.perplexity = { success: false, error: error.message };
+          }
+        }
+
+        // Test Gemini key
+        if (keys.gemini) {
+          try {
+            const testService = new AIService();
+            await testService.initializeGemini(keys.gemini);
+            const testResult = await testService.getSuggestions('test', { provider: 'gemini' });
+            results.gemini = { success: true, message: 'Gemini API key is working' };
+          } catch (error) {
+            results.gemini = { success: false, error: error.message };
+          }
+        }
+
+        // Overall success if at least one key works
+        results.success = (results.perplexity && results.perplexity.success) || 
+                         (results.gemini && results.gemini.success);
+
+        return results;
+      } catch (error) {
+        console.error('Error testing API keys:', error);
+        return { success: false, error: error.message };
+      }
+    });
+
     // Monitoring control
     ipcMain.handle('toggle-monitoring', async () => {
       return this.toggleMonitoring();
@@ -181,19 +255,12 @@ class AIWritingAssistant {
     });
 
     // Shortcut management
-    ipcMain.handle('update-shortcut', async (event, { action, shortcut }) => {
+    ipcMain.handle('update-shortcut', async (event, shortcut) => {
       try {
-        const shortcuts = this.store.get('shortcuts', {
-          autoCopy: 'CommandOrControl+Shift+T',
-          altAutoCopy: 'CommandOrControl+Shift+Space',
-          analyzeClipboard: 'CommandOrControl+Shift+C'
-        });
+        this.store.set('shortcut', shortcut);
         
-        shortcuts[action] = shortcut;
-        this.store.set('shortcuts', shortcuts);
-        
-        // Update shortcuts
-        this.updateShortcuts();
+        // Update shortcut
+        this.updateShortcut();
         
         return { success: true };
       } catch (error) {
@@ -202,12 +269,8 @@ class AIWritingAssistant {
       }
     });
 
-    ipcMain.handle('get-shortcuts', async () => {
-      return this.store.get('shortcuts', {
-        autoCopy: 'CommandOrControl+Shift+T',
-        altAutoCopy: 'CommandOrControl+Shift+Space',
-        analyzeClipboard: 'CommandOrControl+Shift+C'
-      });
+    ipcMain.handle('get-shortcut', async () => {
+      return this.store.get('shortcut', 'CommandOrControl+Shift+T');
     });
 
     // Prompts management
@@ -476,32 +539,25 @@ class AIWritingAssistant {
     }
   }
 
-  updateShortcuts() {
-    // Get shortcuts from store
-    const shortcuts = this.store.get('shortcuts', {
-      autoCopy: 'CommandOrControl+Shift+T',
-      altAutoCopy: 'CommandOrControl+Shift+Space',
-      analyzeClipboard: 'CommandOrControl+Shift+C'
-    });
+  updateShortcut() {
+    // Get shortcut from store
+    const shortcut = this.store.get('shortcut', 'CommandOrControl+Shift+T');
 
-    // Register shortcuts
-    this.registerShortcut(shortcuts.autoCopy, () => {
-      console.log('Cmd+Shift+T detected - auto-copying and analyzing text');
+    // Unregister all existing shortcuts
+    this.unregisterAllShortcuts();
+
+    // Register the single shortcut
+    this.registerShortcut(shortcut, () => {
+      console.log(`${shortcut} detected - auto-copying and analyzing text`);
       this.autoCopyAndAnalyze();
     });
+  }
 
-    this.registerShortcut(shortcuts.altAutoCopy, () => {
-      console.log('Cmd+Shift+Space detected - auto-copying and analyzing text');
-      this.autoCopyAndAnalyze();
-    });
-
-    this.registerShortcut(shortcuts.analyzeClipboard, () => {
-      console.log('Cmd+Shift+C detected - analyzing clipboard text');
-      const currentText = clipboard.readText();
-      if (currentText && currentText.trim().length > 0) {
-        this.handleTextInput(currentText.trim());
-      }
-    });
+  unregisterAllShortcuts() {
+    // Unregister all existing shortcuts
+    for (const [shortcut, action] of this.registeredShortcuts) {
+      this.unregisterShortcut(shortcut);
+    }
   }
 }
 
@@ -512,8 +568,8 @@ app.whenReady().then(async () => {
   aiAssistant.createWindow();
   aiAssistant.createTray();
   
-  // Initialize shortcuts from store
-  aiAssistant.updateShortcuts();
+  // Initialize shortcut from store
+  aiAssistant.updateShortcut();
   
   // Initialize AI services - using environment variables
   console.log('AI Reponder initialized with environment variables');

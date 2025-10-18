@@ -113,23 +113,39 @@ jest.mock('electron', () => {
     showMessageBox: jest.fn(() => Promise.resolve({ response: 0 }))
   };
 
-  const mockShell = {
-    openExternal: jest.fn()
-  };
+        const mockShell = {
+          openExternal: jest.fn()
+        };
 
-  return {
-    app: mockApp,
-    BrowserWindow: mockBrowserWindow,
-    Tray: mockTray,
-    Menu: mockMenu,
-    globalShortcut: mockGlobalShortcut,
-    clipboard: mockClipboard,
-    screen: mockScreen,
-    ipcMain: mockIpcMain,
-    ipcRenderer: mockIpcRenderer,
-    dialog: mockDialog,
-    shell: mockShell
-  };
+        const mockNativeImage = {
+          createFromPath: jest.fn(() => ({
+            toDataURL: jest.fn(() => 'data:image/png;base64,test'),
+            getSize: jest.fn(() => ({ width: 16, height: 16 }))
+          })),
+          createFromDataURL: jest.fn(() => ({
+            toDataURL: jest.fn(() => 'data:image/png;base64,test'),
+            getSize: jest.fn(() => ({ width: 16, height: 16 }))
+          })),
+          createFromBuffer: jest.fn(() => ({
+            toDataURL: jest.fn(() => 'data:image/png;base64,test'),
+            getSize: jest.fn(() => ({ width: 16, height: 16 }))
+          }))
+        };
+
+        return {
+          app: mockApp,
+          BrowserWindow: mockBrowserWindow,
+          Tray: mockTray,
+          Menu: mockMenu,
+          globalShortcut: mockGlobalShortcut,
+          clipboard: mockClipboard,
+          screen: mockScreen,
+          ipcMain: mockIpcMain,
+          ipcRenderer: mockIpcRenderer,
+          dialog: mockDialog,
+          shell: mockShell,
+          nativeImage: mockNativeImage
+        };
 });
 
 // Mock electron-store
@@ -215,4 +231,12 @@ global.testUtils = {
 afterEach(() => {
   jest.clearAllMocks();
   jest.clearAllTimers();
+  jest.useRealTimers();
+});
+
+// Clean up after all tests
+afterAll(() => {
+  jest.clearAllMocks();
+  jest.clearAllTimers();
+  jest.useRealTimers();
 });
