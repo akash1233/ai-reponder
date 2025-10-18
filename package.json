@@ -40,7 +40,6 @@
     "active-win": "^7.0.0",
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
-    "electron-clipboard-ex": "^1.0.0",
     "electron-store": "^8.1.0",
     "openai": "^4.20.0"
   },
@@ -75,7 +74,6 @@
       "node_modules/@google/generative-ai/**/*",
       "node_modules/axios/**/*",
       "node_modules/active-win/**/*",
-      "node_modules/electron-clipboard-ex/**/*",
       "node_modules/electron-store/**/*",
       "node_modules/openai/**/*"
     ],
@@ -84,11 +82,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "assets/icon.icns",

@@ -138,9 +138,10 @@ class AIWritingAssistant {
 
     // New API keys handlers for UI
     ipcMain.handle('get-api-keys', async () => {
+      const apiKeys = this.store.get('apiKeys', {});
       return {
-        perplexity: this.store.get('apiKeys.perplexity', ''),
-        gemini: this.store.get('apiKeys.gemini', '')
+        perplexity: apiKeys.perplexity || '',
+        gemini: apiKeys.gemini || ''
       };
     });
 
@@ -604,3 +605,6 @@ if (!gotTheLock) {
     }
   });
 }
+
+// Export the class for testing
+module.exports = AIWritingAssistant;
