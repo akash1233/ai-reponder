@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /Users/ds/ai-reponser
-echo "Starting AI Reponder..."
+cd /Users/ds/ai-responder
+echo "Starting AI Responder..."
 echo "Make sure you have added your API keys in Settings!"
 npm start
