@@ -13,7 +13,8 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   testTimeout: 15000,
-  verbose: true,
+  verbose: false,
+  silent: true,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
@@ -21,12 +22,12 @@ module.exports = {
     {
       displayName: 'node',
       testEnvironment: 'node',
-      testMatch: ['<rootDir>/tests/(main|ai-service|text-monitor|suggestion-overlay|integration).test.js']
+      testMatch: ['<rootDir>/tests/(main|ai-service|text-monitor|suggestion-overlay|integration|main-api-keys|missing-api-keys).test.js']
     },
     {
       displayName: 'jsdom',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/tests/renderer.test.js']
+      testMatch: ['<rootDir>/tests/(renderer|api-keys).test.js']
     }
   ]
 };

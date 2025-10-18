@@ -101,46 +101,12 @@
                     <div class="shortcut-config">
                         <div class="shortcut-item">
                             <div class="shortcut-info">
-                                <label>Auto-copy and analyze</label>
-                                <span class="shortcut-description">Automatically select all text and analyze it</span>
+                                <label>AI Analysis Shortcut</label>
+                                <span class="shortcut-description">Press this shortcut to automatically select text and get AI suggestions</span>
                             </div>
                             <div class="shortcut-controls">
-                                <input type="text" id="autoCopyShortcut" value="Cmd+Shift+T" readonly>
-                                <button class="change-shortcut-btn" data-action="autoCopy">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                        <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M15.5 5.5L8.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                    Change
-                                </button>
-                            </div>
-                        </div>
-                        <div class="shortcut-item">
-                            <div class="shortcut-info">
-                                <label>Alternative auto-copy</label>
-                                <span class="shortcut-description">Alternative shortcut for auto-copy</span>
-                            </div>
-                            <div class="shortcut-controls">
-                                <input type="text" id="altAutoCopyShortcut" value="Cmd+Shift+Space" readonly>
-                                <button class="change-shortcut-btn" data-action="altAutoCopy">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                        <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M15.5 5.5L8.5 12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                    Change
-                                </button>
-                            </div>
-                        </div>
-                        <div class="shortcut-item">
-                            <div class="shortcut-info">
-                                <label>Analyze clipboard</label>
-                                <span class="shortcut-description">Analyze current clipboard content</span>
-                            </div>
-                            <div class="shortcut-controls">
-                                <input type="text" id="analyzeClipboardShortcut" value="Cmd+Shift+C" readonly>
-                                <button class="change-shortcut-btn" data-action="analyzeClipboard">
+                                <input type="text" id="shortcutInput" value="Cmd+Shift+T" readonly>
+                                <button class="change-shortcut-btn" id="changeShortcutBtn">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                         <path d="M17 3A2.85 2.83 0 1 1 14.15 6.15A2.85 2.83 0 0 1 17 3Z" stroke="currentColor" stroke-width="2"/>
                                         <path d="M6.5 20.5A2.5 2.5 0 1 1 9 18A2.5 2.5 0 0 1 6.5 20.5Z" stroke="currentColor" stroke-width="2"/>
@@ -217,6 +183,105 @@
                 <div class="config-section">
                     <div class="section-header">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="2"/>
+                            <path d="M7 11V7A5 5 0 0 1 17 7V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <h4>API Keys</h4>
+                    </div>
+                    <div class="api-keys-config">
+                        <div class="api-key-item">
+                            <div class="api-key-info">
+                                <label for="perplexityApiKey">Perplexity API Key</label>
+                                <span class="api-key-description">Required for AI text analysis. Get your key from <a href="https://perplexity.ai" target="_blank">perplexity.ai</a></span>
+                            </div>
+                            <div class="api-key-control">
+                                <input type="password" id="perplexityApiKey" placeholder="Enter your Perplexity API key..." class="api-key-input">
+                                <button class="toggle-visibility-btn" data-target="perplexityApiKey" title="Toggle visibility">
+                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" style="display: none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12A18.45 18.45 0 0 1 5.06 5.06L17.94 17.94Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12A18.5 18.5 0 0 1 19.1 19.76L9.9 4.24Z" stroke="currentColor" stroke-width="2"/>
+                                        <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="api-key-status" id="perplexityStatus">
+                                <span class="status-indicator"></span>
+                                <span class="status-text">Not configured</span>
+                            </div>
+                        </div>
+                        
+                        <div class="api-key-item">
+                            <div class="api-key-info">
+                                <label for="geminiApiKey">Gemini API Key</label>
+                                <span class="api-key-description">Optional alternative AI provider. Get your key from <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a></span>
+                            </div>
+                            <div class="api-key-control">
+                                <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API key..." class="api-key-input">
+                                <button class="toggle-visibility-btn" data-target="geminiApiKey" title="Toggle visibility">
+                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <svg class="eye-off-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" style="display: none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12A18.45 18.45 0 0 1 5.06 5.06L17.94 17.94Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12A18.5 18.5 0 0 1 19.1 19.76L9.9 4.24Z" stroke="currentColor" stroke-width="2"/>
+                                        <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="api-key-status" id="geminiStatus">
+                                <span class="status-indicator"></span>
+                                <span class="status-text">Not configured</span>
+                            </div>
+                        </div>
+                        
+                        <div class="api-keys-actions">
+                            <button class="test-keys-btn" id="testKeysBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                Test API Keys
+                            </button>
+                            <button class="save-keys-btn" id="saveKeysBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3H16L21 8V19A2 2 0 0 1 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <polyline points="17,21 17,13 7,13 7,21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <polyline points="7,3 7,8 15,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Save API Keys
+                            </button>
+                        </div>
+                        
+                        <div class="api-keys-help">
+                            <div class="help-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M9.09 9A3 3 0 0 1 12 6C13.657 6 15 7.343 15 9C15 10.657 13.657 12 12 12C11.5 12 11 11.5 11 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span>At least one API key is required for the app to function</span>
+                            </div>
+                            <div class="help-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M9.09 9A3 3 0 0 1 12 6C13.657 6 15 7.343 15 9C15 10.657 13.657 12 12 12C11.5 12 11 11.5 11 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span>API keys are stored locally and never shared</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="section-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
                             <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
@@ -242,19 +307,11 @@
 
         <!-- Instructions -->
         <div class="instructions">
-            <h3>Keyboard Shortcuts:</h3>
+            <h3>Keyboard Shortcut:</h3>
             <div class="shortcut-list">
                 <div class="shortcut-item">
-                    <kbd id="displayAutoCopyShortcut">Cmd+Shift+T</kbd>
-                    <span>Auto-copy and analyze text</span>
-                </div>
-                <div class="shortcut-item">
-                    <kbd id="displayAltAutoCopyShortcut">Cmd+Shift+Space</kbd>
-                    <span>Alternative auto-copy</span>
-                </div>
-                <div class="shortcut-item">
-                    <kbd id="displayAnalyzeClipboardShortcut">Cmd+Shift+C</kbd>
-                    <span>Analyze clipboard</span>
+                    <kbd id="displayShortcut">Cmd+Shift+T</kbd>
+                    <span>AI Analysis - Select text and get suggestions</span>
                 </div>
             </div>
         </div>

@@ -21,12 +21,24 @@ describe('TextMonitor', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
     mockCallback = jest.fn();
+    
+    // Clear clipboard mocks
+    const { clipboard } = require('electron');
+    clipboard.readText.mockClear();
+    clipboard.writeText.mockClear();
     
     // Import the service
     delete require.cache[require.resolve('../src/services/TextMonitor.js')];
     const TextMonitor = require('../src/services/TextMonitor.js');
     textMonitor = new TextMonitor();
+  });
+
+  afterEach(() => {
+    textMonitor.stop(); // Ensure monitoring is stopped after each test
+    jest.clearAllTimers();
+    jest.useRealTimers();
   });
 
   describe('Initialization', () => {
@@ -80,48 +92,31 @@ describe('TextMonitor', () => {
       const { clipboard } = require('electron');
       
       // Mock clipboard content changes
-      clipboard.readText
-        .mockReturnValueOnce('') // Initial empty
-        .mockReturnValueOnce('old text') // First change
-        .mockReturnValueOnce('new text'); // Second change
+      clipboard.readText.mockReturnValue('test content');
 
       await textMonitor.start(mockCallback);
-      textMonitor.startClipboardMonitoring();
-
-      // Simulate clipboard monitoring
-      textMonitor.lastClipboard = '';
-      textMonitor.processText = jest.fn();
-
-      // Trigger clipboard check
-      const interval = textMonitor.clipboardInterval;
-      if (interval) {
-        // Simulate the interval callback
-        const callback = interval._onTimeout || interval;
-        if (typeof callback === 'function') {
-          callback();
-        }
-      }
+      
+      // Advance timers to trigger the interval
+      jest.advanceTimersByTime(200);
 
       expect(clipboard.readText).toHaveBeenCalled();
     });
 
-    test('should detect clipboard changes', async () => {
+    test('should process clipboard content', async () => {
       const { clipboard } = require('electron');
+      
+      // Clear any previous calls and set up fresh mock
+      clipboard.readText.mockClear();
       clipboard.readText.mockReturnValue('changed text');
+      
       textMonitor.processText = jest.fn(); // Mock processText to track calls
 
       await textMonitor.start(mockCallback);
       
-      // Manually trigger the interval callback since fake timers aren't working
-      if (textMonitor.clipboardInterval) {
-        const intervalCallback = textMonitor.clipboardInterval._onTimeout;
-        if (intervalCallback) {
-          intervalCallback();
-        }
-      }
+      // Advance timers to trigger the interval
+      jest.advanceTimersByTime(200);
 
-      // The test should expect 1 call since we're manually triggering the callback
-      expect(clipboard.readText).toHaveBeenCalledTimes(1);
+      expect(clipboard.readText).toHaveBeenCalled();
       expect(textMonitor.processText).toHaveBeenCalledWith('changed text');
     });
   });
@@ -292,15 +287,13 @@ Line 4`;
       expect(textMonitor.isTyping).toBe(true);
     });
 
-    test('should clear typing state after timeout', (done) => {
+    test('should clear typing state after timeout', () => {
       textMonitor.processText('test text');
       expect(textMonitor.isTyping).toBe(true);
       
-      // Wait for timeout
-      setTimeout(() => {
-        expect(textMonitor.isTyping).toBe(false);
-        done();
-      }, 1100);
+      // Advance timers to trigger timeout
+      jest.advanceTimersByTime(1100);
+      expect(textMonitor.isTyping).toBe(false);
     });
 
     test('should clear existing timeout when new text is processed', () => {

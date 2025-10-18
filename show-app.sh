@@ -25,7 +25,7 @@ if pgrep -f "electron.*ai-reponder" > /dev/null; then
 else
     echo "❌ AI Reponder is not running."
     echo "Starting the app now..."
-    cd /Users/ds/ai-reponder
+    cd /Users/ds/ai-reponser
     npm start &
     echo "App started! Look for the window."
 fi

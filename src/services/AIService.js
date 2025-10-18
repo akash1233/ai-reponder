@@ -5,7 +5,12 @@ class AIService {
   constructor() {
     this.geminiClient = null;
     this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || null;
-    this.geminiApiKey = null;
+    this.geminiApiKey = process.env.GEMINI_API_KEY || null;
+    
+    // Initialize Gemini if API key is available and not undefined
+    if (this.geminiApiKey && this.geminiApiKey !== 'undefined') {
+      this.initializeGemini(this.geminiApiKey);
+    }
   }
 
   async initializeGemini(apiKey) {
@@ -47,14 +52,23 @@ class AIService {
     const { isSlack = false, context = 'general', provider = 'auto', promptTemplate } = options;
     
     try {
-      // Always use Perplexity AI (hardcoded)
+      // Auto-select provider based on availability
       if (provider === 'auto') {
-        console.log('Using Perplexity AI (hardcoded)');
-        return await this.getPerplexitySuggestions(text, { isSlack, context });
+        if (this.geminiClient) {
+          console.log('Using Gemini AI (auto-selected)');
+          return await this.getGeminiSuggestions(text, { isSlack, context, promptTemplate });
+        } else if (this.perplexityApiKey) {
+          console.log('Using Perplexity AI (auto-selected)');
+          return await this.getPerplexitySuggestions(text, { isSlack, context, promptTemplate });
+        } else {
+          throw new Error('No AI provider configured');
+        }
       } else if (provider === 'gemini' && this.geminiClient) {
-        return await this.getGeminiSuggestions(text, { isSlack, context });
+        console.log('Using Gemini AI (explicitly requested)');
+        return await this.getGeminiSuggestions(text, { isSlack, context, promptTemplate });
       } else if (provider === 'perplexity' && this.perplexityApiKey) {
-        return await this.getPerplexitySuggestions(text, { isSlack, context });
+        console.log('Using Perplexity AI (explicitly requested)');
+        return await this.getPerplexitySuggestions(text, { isSlack, context, promptTemplate });
       } else {
         throw new Error('No AI provider configured');
       }
@@ -65,7 +79,7 @@ class AIService {
   }
 
   async getGeminiSuggestions(text, options) {
-    const models = ["gemini-1.5-pro", "gemini-1.0-pro", "gemini-pro"];
+    const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     
     for (const modelName of models) {
       try {
