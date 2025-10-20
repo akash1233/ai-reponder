@@ -41,7 +41,7 @@
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
     "electron-store": "^8.1.0",
-    "openai": "^4.20.0"
+    "openai": "^6.5.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.3",
