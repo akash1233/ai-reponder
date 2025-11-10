@@ -37,7 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "active-win": "^7.0.0",
+    "active-win": "^9.0.0",
     "axios": "^1.6.0",
     "dotenv": "^16.4.5",
     "electron-store": "^8.1.0",
